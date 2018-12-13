@@ -229,3 +229,5 @@ dmypy.json
 .pyre/
 
 .idea/*
+
+local_params.py
