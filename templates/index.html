@@ -1,6 +1,21 @@
 {% extends 'base.html' %}
 {% block content %}
-      <h1>Flask-SSE Quickstart</h1>
+    <h1>Flask-SSE Quickstart</h1>
+
+    {% if contacts %}
+        <p>Contacts list</p>
+        <ul>
+            {% for contact in contacts %}
+                <li>
+                    <div>
+                        <p>{{ contact.to_person.username }}</p>
+                        <button>make call</button>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
 {% endblock %}
 
 

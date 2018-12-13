@@ -1,5 +1,4 @@
 import peewee as db
-
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -33,6 +32,6 @@ class User(UserMixin, Model):
         return check_password_hash(self.password, password)
 
 
-class Contacts(Model):
+class Contact(Model):
     from_person = db.ForeignKeyField(User)
     to_person = db.ForeignKeyField(User)
