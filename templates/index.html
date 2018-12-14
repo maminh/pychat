@@ -9,7 +9,9 @@
                 <li>
                     <div>
                         <p>{{ contact.to_person.username }}</p>
-                        <button>make call</button>
+                        <button class="btn" onclick='onclick_call("{{ contact.to_person.username }}");'>
+                            make call
+                        </button>
                     </div>
                 </li>
             {% endfor %}
@@ -18,14 +20,94 @@
 
 {% endblock %}
 
+{% block static %}
+    {##}
+    {#    <script>#}
+    {#        var source = new EventSource("{{ url_for('sse.stream', channel=user.username) }}");#}
+    {#        source.addEventListener('greeting', function (event) {#}
+    {#            var data = JSON.parse(event.data);#}
+    {#            alert("The server says " + data.message);#}
+    {#        }, false);#}
+    {#        source.addEventListener('error', function (event) {#}
+    {#            alert("Failed to connect to event stream. Is Redis running?");#}
+    {#        }, false);#}
+    {#        source.addEventListener('offer', function (event) {#}
+    {#        }, false);#}
+    {#    </script>#}
+    {#    <script>#}
+    {#    var xhr = new XMLHttpRequest();#}
+    {#    xhr.open('POST', '/call');#}
+    {#    xhr.onload = function () {#}
+    {#        if (this.status === 200) {#}
+    {#            console.log(this.response)#}
+    {#        }#}
+    {#    };#}
+    {#    xhr.send(JSON.stringify({username:"amin"}))#}
+    {##}
+    {#    </script>#}
 
-{#  <script>#}
-{#    var source = new EventSource("{{ url_for('sse.stream') }}");#}
-{#    source.addEventListener('greeting', function(event) {#}
-{#        var data = JSON.parse(event.data);#}
-{#        alert("The server says " + data.message);#}
-{#    }, false);#}
-{#    source.addEventListener('error', function(event) {#}
-{#        alert("Failed to connect to event stream. Is Redis running?");#}
-{#    }, false);#}
-{#  </script>#}
+    <script>
+        var source = new EventSource("{{ url_for('sse.stream', channel=user.username) }}");
+        var user_b;
+        var configuration = {
+            "iceServers": [{"url": "stun:stunserver.org:3478"}]
+        };
+
+        var rtc_connection = new webkitRTCPeerConnection();
+
+        rtc_connection.onicecandidate = function (event) {
+            if (event.candidate) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_candidate') }}");
+                xhr.send(JSON.stringify({candidate: event.candidate, username: user_b}));
+            }
+        };
+
+
+        function onclick_call(username) {
+            user_b = username;
+            rtc_connection.createOffer(function (offer) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_offer') }}");
+                xhr.onload = function () {
+                    if (this.status === 200) {
+                        alert("request send to " + username);
+                    } else {
+                        alert("request failed");
+                    }
+                };
+                xhr.send(JSON.stringify({username: username, offer: offer}));
+
+                rtc_connection.setLocalDescription(offer);
+            });
+        }
+
+        source.addEventListener('offer', function (event) {
+            var data = JSON.parse(event.data);
+            alert('got offer from ' + data.username);
+            rtc_connection.setRemoteDescription(new RTCSessionDescription((data.offer)));
+
+            rtc_connection.createAnswer(function (answer) {
+                rtc_connection.setLocalDescription(answer);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_answer') }}");
+                xhr.onload = function () {
+                    if (this.status === 200) {
+                        console.log('answer send');
+                    }
+                };
+                xhr.send(JSON.stringify({answer: answer, username: data.username}));
+            })
+        }, false);
+
+        source.addEventListener('answer', function (event) {
+            var data = JSON.parse(event.data);
+            rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
+
+        }, false);
+
+
+    </script>
+
+{% endblock %}
+

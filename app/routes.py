@@ -1,5 +1,8 @@
-from flask import render_template, redirect, url_for, flash
+from json import loads
+
+from flask import render_template, redirect, url_for, flash, request, Response
 from flask_login import login_user, current_user, logout_user, login_required
+from flask_sse import sse
 from peewee import DoesNotExist
 
 from app import App
@@ -57,9 +60,40 @@ def add_contact():
     return render_template('add_contact.html', title='add contact', form=form)
 
 
+@App.route('/offer', methods=['POST'])
+@login_required
+def send_offer():
+    data = loads(request.data)
+    sse.publish(
+        {'username': current_user.username, 'offer': data.get('offer')}, type='offer', channel=data.get('username')
+    )
+    return Response('', status=201)
+
+
+@App.route('/answer', methods=['POST'])
+@login_required
+def send_answer():
+    data = loads(request.data)
+    sse.publish(
+        {'answer': data.get('answer'), 'username': current_user.username}, type='answer', channel=data.get('username')
+    )
+    return Response('', status=201)
+
+
+@App.route('/candidate', methods=['POST'])
+@login_required
+def send_candidate():
+    data = loads(request.data)
+    sse.publish(
+        {'candidate': data.get('candidate'), 'username': current_user.username},
+        type='candidate', channel=data.get('username')
+    )
+    return Response('', status=201)
+
+
 @App.route('/')
 @login_required
 def index():
     return render_template(
-        "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id)
+        "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
     )
