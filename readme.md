@@ -21,3 +21,4 @@ User.create_table()
 Contact.create_table()
 ```
 
+run the server using start.py
