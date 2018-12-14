@@ -77,19 +77,18 @@ def send_answer():
     sse.publish(
         {'answer': data.get('answer'), 'username': current_user.username}, type='answer', channel=data.get('username')
     )
-    return Response('', status=201)
+    return Response('ok', status=200)
 
 
 @App.route('/candidate', methods=['POST'])
 @login_required
 def send_candidate():
     data = loads(request.data)
-    print(data)
     sse.publish(
         {'candidate': data.get('candidate'), 'username': current_user.username},
         type='candidate', channel=data.get('username')
     )
-    return Response('', status=201)
+    return Response('ok', status=200)
 
 
 @App.route('/')
@@ -99,8 +98,3 @@ def index():
         "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
     )
 
-
-@App.route('/hello')
-def publish_hello():
-    sse.publish({"message": "Hello!"}, type='greeting', channel=current_user.username)
-    return "Message sent!"

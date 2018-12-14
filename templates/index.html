@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% block content %}
     <h1>Flask-SSE Quickstart</h1>
+    <div>
+        <input type="text" id="msgInput"/>
+        <button id="sendMsgBtn" onclick="send_msg()">Send text message</button>
+    </div>
+
 
     {% if contacts %}
         <p>Contacts list</p>
@@ -52,52 +57,42 @@
         var configuration = {
             "iceServers": [{"url": "stun:stunserver.org:3478"}]
         };
-        var mediaConstraints = {
-            optional: [],
-            mandatory: {
-                OfferToReceiveAudio: true,
-                OfferToReceiveVideo: true
-            }
-        };
+        var RTCPC_OPTIONAL = {optional: [{RtpDataChannels: true}]};
 
-        var rtc_connection = new webkitRTCPeerConnection();
+        var rtc_connection = new webkitRTCPeerConnection(configuration, RTCPC_OPTIONAL);
 
         rtc_connection.onicecandidate = function (event) {
             if (event.candidate) {
-                console.log('onicecandidate');
+                console.log('onicecandidate called');
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('send_candidate') }}");
                 xhr.send(JSON.stringify({candidate: event.candidate, username: user_b}));
             }
         };
 
-
         function onclick_call(username) {
-            console.log('on click');
+            console.log('button clicked');
             user_b = username;
             rtc_connection.createOffer().then(function (offer) {
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('send_offer') }}");
                 xhr.onload = function () {
                     if (this.status === 200) {
-                        alert("request send to " + username);
-                        console.log('sended');
+                        console.log('offer send successfully');
                     } else {
-                        alert("request failed");
+                        alert("offer request failed");
                     }
                 };
                 xhr.send(JSON.stringify({username: username, offer: offer}));
-                console.log('1');
                 rtc_connection.setLocalDescription(offer);
-                console.log('2');
-            }, null, mediaConstraints);
-            console.log('3');
+            }, null);
         }
 
         source.addEventListener('offer', function (event) {
-            console.log('got offer');
+            console.log('offer request received');
             var data = JSON.parse(event.data);
             rtc_connection.setRemoteDescription(new RTCSessionDescription((data.offer)));
+            user_b = data.username;
 
             rtc_connection.createAnswer().then(function (answer) {
                 rtc_connection.setLocalDescription(answer);
@@ -105,7 +100,7 @@
                 xhr.open('POST', "{{ url_for('send_answer') }}");
                 xhr.onload = function () {
                     if (this.status === 200) {
-                        console.log('answer send');
+                        console.log('answer request send');
                     }
                 };
                 xhr.send(JSON.stringify({answer: answer, username: data.username}));
@@ -113,16 +108,13 @@
         }, false);
 
         source.addEventListener('answer', function (event) {
-            console.log('answer');
+            console.log('answer received');
             var data = JSON.parse(event.data);
             rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', "{{ url_for('send_candidate') }}");
-            xhr.send(JSON.stringify({candidate: this.candidate, username: data.username}));
         }, false);
 
         source.addEventListener('candidate', function (event) {
-            console.log('candidate');
+            console.log('candidate received');
             var data = JSON.parse(event.data);
             rtc_connection.addIceCandidate(new RTCIceCandidate(data.candidate));
         }, false);
