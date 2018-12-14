@@ -67,7 +67,7 @@ def send_offer():
     sse.publish(
         {'username': current_user.username, 'offer': data.get('offer')}, type='offer', channel=data.get('username')
     )
-    return Response('', status=201)
+    return Response('ok', status=200)
 
 
 @App.route('/answer', methods=['POST'])
@@ -84,6 +84,7 @@ def send_answer():
 @login_required
 def send_candidate():
     data = loads(request.data)
+    print(data)
     sse.publish(
         {'candidate': data.get('candidate'), 'username': current_user.username},
         type='candidate', channel=data.get('username')
@@ -97,3 +98,9 @@ def index():
     return render_template(
         "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
     )
+
+
+@App.route('/hello')
+def publish_hello():
+    sse.publish({"message": "Hello!"}, type='greeting', channel=current_user.username)
+    return "Message sent!"

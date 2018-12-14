@@ -52,11 +52,19 @@
         var configuration = {
             "iceServers": [{"url": "stun:stunserver.org:3478"}]
         };
+        var mediaConstraints = {
+            optional: [],
+            mandatory: {
+                OfferToReceiveAudio: true,
+                OfferToReceiveVideo: true
+            }
+        };
 
         var rtc_connection = new webkitRTCPeerConnection();
 
         rtc_connection.onicecandidate = function (event) {
             if (event.candidate) {
+                console.log('onicecandidate');
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('send_candidate') }}");
                 xhr.send(JSON.stringify({candidate: event.candidate, username: user_b}));
@@ -65,29 +73,33 @@
 
 
         function onclick_call(username) {
+            console.log('on click');
             user_b = username;
-            rtc_connection.createOffer(function (offer) {
+            rtc_connection.createOffer().then(function (offer) {
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('send_offer') }}");
                 xhr.onload = function () {
                     if (this.status === 200) {
                         alert("request send to " + username);
+                        console.log('sended');
                     } else {
                         alert("request failed");
                     }
                 };
                 xhr.send(JSON.stringify({username: username, offer: offer}));
-
+                console.log('1');
                 rtc_connection.setLocalDescription(offer);
-            });
+                console.log('2');
+            }, null, mediaConstraints);
+            console.log('3');
         }
 
         source.addEventListener('offer', function (event) {
+            console.log('got offer');
             var data = JSON.parse(event.data);
-            alert('got offer from ' + data.username);
             rtc_connection.setRemoteDescription(new RTCSessionDescription((data.offer)));
 
-            rtc_connection.createAnswer(function (answer) {
+            rtc_connection.createAnswer().then(function (answer) {
                 rtc_connection.setLocalDescription(answer);
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('send_answer') }}");
@@ -97,15 +109,23 @@
                     }
                 };
                 xhr.send(JSON.stringify({answer: answer, username: data.username}));
-            })
+            }, null)
         }, false);
 
         source.addEventListener('answer', function (event) {
+            console.log('answer');
             var data = JSON.parse(event.data);
             rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
-
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', "{{ url_for('send_candidate') }}");
+            xhr.send(JSON.stringify({candidate: this.candidate, username: data.username}));
         }, false);
 
+        source.addEventListener('candidate', function (event) {
+            console.log('candidate');
+            var data = JSON.parse(event.data);
+            rtc_connection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }, false);
 
     </script>
 
