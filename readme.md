@@ -1,12 +1,27 @@
 # PyChat Project
 
-before running project create a local_params.py in root directory:
+### running project
+
+for sse connections redis is needed:
+
+```bash
+sudo apt install redis-server
+```
+
+
+
+create a local_params.py in root directory: with following variables:
 
 ```python
 DB_HOST = 'db host'
 DB_NAME = 'db name'
 DB_USER = 'db user'
 DB_PASS = 'db pass'
+
+REDIS_URL = 'redis url'
+
+DEBUG_MODE = True or False
+HOST = 'server running host'
 ```
 
 mysql used for database.

@@ -97,4 +97,3 @@ def index():
     return render_template(
         "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
     )
-
