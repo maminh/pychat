@@ -6,8 +6,8 @@ from flask_sse import sse
 from peewee import DoesNotExist
 
 from app import App
-from app.forms import LoginForm, RegistrationForm, AddContactForm
-from app.models import User, Contact
+from app.forms import LoginForm, RegistrationForm
+from app.models import User
 
 
 @App.route('/register', methods=['GET', 'POST'])
@@ -48,16 +48,6 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('index'))
-
-
-@App.route('/add_contact', methods=['GET', 'POST'])
-@login_required
-def add_contact():
-    form = AddContactForm()
-    if form.validate_on_submit():
-        Contact.get_or_create(from_person=current_user.id, to_person=form.user_id)
-        return redirect(url_for('index'))
-    return render_template('add_contact.html', title='add contact', form=form)
 
 
 @App.route('/offer', methods=['POST'])
@@ -105,4 +95,3 @@ def index():
     return render_template(
         "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
     )
-
