@@ -65,7 +65,7 @@ def add_contact():
 def send_offer():
     data = loads(request.data)
     sse.publish(
-        {'username': current_user.username, 'offer': data.get('offer')}, type='offer', channel=data.get('username')
+        {'offer': data.get('offer')}, type='offer', channel=data.get('room')
     )
     return Response('ok', status=200)
 
@@ -75,7 +75,7 @@ def send_offer():
 def send_answer():
     data = loads(request.data)
     sse.publish(
-        {'answer': data.get('answer'), 'username': current_user.username}, type='answer', channel=data.get('username')
+        {'answer': data.get('answer')}, type='answer', channel=data.get('room')
     )
     return Response('ok', status=200)
 
@@ -85,9 +85,17 @@ def send_answer():
 def send_candidate():
     data = loads(request.data)
     sse.publish(
-        {'candidate': data.get('candidate'), 'username': current_user.username},
-        type='candidate', channel=data.get('username')
+        {'candidate': data.get('candidate')},
+        type='candidate', channel=data.get('room')
     )
+    return Response('ok', status=200)
+
+
+@App.route('/join_room', methods=['POST'])
+@login_required
+def join_room():
+    data = loads(request.data)
+    sse.publish({'username': data.get('username')}, type='join', channel=data.get('room'))
     return Response('ok', status=200)
 
 
@@ -97,3 +105,4 @@ def index():
     return render_template(
         "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
     )
+

@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Cover Template for Bootstrap</title>
+    <title>PyChat</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
@@ -14,21 +14,7 @@
 
     <!-- Custom styles for this template -->
     <style>
-        /*
- * Globals
- */
-
-        /* Links */
-        a,
-        a:focus,
-        a:hover {
-            color: #fff;
-        }
-
-        /* Custom default button */
-        .btn-secondary,
-        .btn-secondary:hover,
-        .btn-secondary:focus {
+        .btn-secondary {
             color: #333;
             text-shadow: none; /* Prevent inheritance from `body` */
             background-color: #fff;
@@ -38,53 +24,25 @@
         html,
         body {
             height: 100%;
-            background-color: #126;
+            background-color: #333333;
         }
 
         body {
             display: -ms-flexbox;
             display: flex;
             color: #fff;
-            text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
-            box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
         }
 
         .cover-container {
             max-width: 42em;
         }
 
-
-        /*
-         * Header
-         */
-        .masthead {
-            margin-bottom: 2rem;
-        }
-
-        .masthead-brand {
-            margin-bottom: 0;
-        }
-
         .nav-masthead .nav-link {
             padding: .25rem 0;
             font-weight: 700;
-            color: rgba(255, 255, 255, .5);
+            color: #ffffff;
             background-color: transparent;
             border-bottom: .25rem solid transparent;
-        }
-
-        .nav-masthead .nav-link:hover,
-        .nav-masthead .nav-link:focus {
-            border-bottom-color: rgba(255, 255, 255, .25);
-        }
-
-        .nav-masthead .nav-link + .nav-link {
-            margin-left: 1rem;
-        }
-
-        .nav-masthead .active {
-            color: #fff;
-            border-bottom-color: #fff;
         }
 
         @media (min-width: 48em) {
@@ -95,27 +53,6 @@
             .nav-masthead {
                 float: right;
             }
-        }
-
-
-        /*
-         * Cover
-         */
-        .cover {
-            padding: 0 1.5rem;
-        }
-
-        .cover .btn-lg {
-            padding: .75rem 1.25rem;
-            font-weight: 700;
-        }
-
-
-        /*
-         * Footer
-         */
-        .mastfoot {
-            color: rgba(255, 255, 255, .5);
         }
     </style>
 </head>
@@ -133,11 +70,12 @@
     </header>
 
     <main role="main" class="inner cover">
-        <h1 class="cover-heading">PyChat</h1>
+        <h1 class="cover-heading">Hello, {{ user.username }}!</h1>
         <p class="lead">Connect to peoples using rooms</p>
         <p class="lead">
-            <button class="btn btn-lg btn-secondary">Create a room</button>
-            <button class="btn btn-lg btn-secondary">join a room</button>
+            <button class="btn btn-lg btn-secondary" data-toggle="modal" data-target="#createModal">Create a room
+            </button>
+            <button class="btn btn-lg btn-secondary" data-toggle="modal" data-target="#joinModal">join a room</button>
         </p>
     </main>
 
@@ -146,6 +84,68 @@
             <p>internet engineering project</p>
         </div>
     </footer>
+</div>
+
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="text-primary" id="createModalLabel">Create a room</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form">
+                    <div class="form-group">
+
+                        <label for="create_roomName" class="text-secondary">Enter room's name</label>
+                        <input class="form-control form-control-lg rounded-0" id="create_roomName" name="roomName"
+                               required
+                               size="32" type="text" value="">
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="startSession()">Start Session</button>
+                </div>
+            </div>
+            <div id="create_notifications" class="bg-info"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createRoomBtn()">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="joinModal" tabindex="-1" role="dialog" aria-labelledby="joinModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="text-primary" id="joinModalLabel">join a room</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form">
+                    <div class="form-group">
+
+                        <label for="join_roomName" class="text-secondary">Enter room's name</label>
+                        <input class="form-control form-control-lg rounded-0" id="join_roomName" name="roomName"
+                               required
+                               size="32" type="text" value="">
+                    </div>
+                </div>
+                <div id="join_notifications" class="bg-info"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="joinRoomBtn()">Join</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -167,5 +167,154 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
         integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
         crossorigin="anonymous"></script>
+
+<script>
+    var sse_connection;
+    var rtc_connection;
+    var configuration = {
+        "iceServers": [{"url": "stun:stunserver.org:3478"}]
+    };
+    var room;
+
+    function createRoomBtn() {
+        console.log('create room called');
+        var room_name = document.querySelector('#create_roomName').value;
+        var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
+        sse_connection = new EventSource(stream_url);
+        room = room_name;
+        sse_connection.addEventListener('join', function (event) {
+            var data = JSON.parse(event.data);
+            notif("create", data.username + " joined", "alert");
+        }, null);
+
+        sse_connection.addEventListener('answer', function (event) {
+            notif("create", 'answer received', "alert");
+            var data = JSON.parse(event.data);
+            rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        }, false);
+
+        joinAnnouncement(room_name);
+
+    }
+
+    function joinRoomBtn() {
+        console.log('join room called');
+        var room_name = document.querySelector('#join_roomName').value;
+        room = room_name;
+        var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
+        sse_connection = new EventSource(stream_url);
+        rtc_connection = new RTCPeerConnection(configuration);
+
+        rtc_connection.onicecandidate = function (event) {
+            if (event.candidate) {
+                notif('join', 'onicecandidate called', 'alert');
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_candidate') }}");
+                xhr.send(JSON.stringify({candidate: event.candidate, room: room}));
+            }
+        };
+
+        sse_connection.addEventListener('join', function (event) {
+            var data = JSON.parse(event.data);
+            notif("join", data.username + " joined", "alert");
+        }, null);
+
+        joinAnnouncement(room_name);
+        sse_connection.addEventListener('offer', function (event) {
+            notif("join", 'offer request received', "alert");
+
+            var data = JSON.parse(event.data);
+            rtc_connection.setRemoteDescription(new RTCSessionDescription((data.offer)));
+
+            rtc_connection.createAnswer().then(function (answer) {
+                rtc_connection.setLocalDescription(answer);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_answer') }}");
+                xhr.onload = function () {
+                    if (this.status === 200) {
+                        notif("join", 'answer request send', "alert");
+                    }
+                };
+                xhr.send(JSON.stringify({answer: answer, room: room_name}));
+            }, null)
+        }, false);
+
+    }
+
+    function joinAnnouncement(room_name) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', "{{ url_for('join_room') }}");
+        xhr.onload = function () {
+            if (this.status === 200) {
+                console.log('join announcement send');
+            }
+        };
+        xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
+    }
+
+    function startSession() {
+        console.log('session started');
+        notif("create", "session started", "alert");
+        rtc_connection = new RTCPeerConnection(configuration);
+
+        rtc_connection.onicecandidate = function (event) {
+            if (event.candidate) {
+                notif('create', 'onicecandidate called', 'alert');
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_candidate') }}");
+                xhr.send(JSON.stringify({candidate: event.candidate, room: room}));
+            }
+        };
+
+        rtc_connection.createOffer().then(function (offer) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', "{{ url_for('send_offer') }}");
+            xhr.onload = function () {
+                if (this.status === 200) {
+
+                    notif("create", 'offer send successfully', "alert");
+                }
+            };
+            xhr.send(JSON.stringify({room: room, offer: offer}));
+            rtc_connection.setLocalDescription(offer);
+        }, null);
+
+        var dataChannelOptions = {
+            reliable: true
+        };
+
+        console.log('session started');
+
+        dataChannel = rtc_connection.createDataChannel("myDataChannel", dataChannelOptions);
+
+        dataChannel.onerror = function (error) {
+            console.log("Error:", error);
+        };
+
+        dataChannel.onmessage = function (event) {
+            console.log("Got message:");
+        };
+
+        dataChannel.onopen = function (event) {
+            console.log("send message:");
+            dataChannel.send("hi");
+        };
+
+    }
+
+    function notif(type, msg, kind) {
+        var notifications;
+        if (type === "create") {
+            notifications = document.querySelector('#create_notifications');
+        } else {
+            notifications = document.querySelector('#join_notifications');
+        }
+        var para = document.createElement("p");
+        para.appendChild(document.createTextNode(msg));
+        notifications.appendChild(para);
+    }
+
+</script>
+
 </body>
 </html>
