@@ -1,119 +1,171 @@
-{% extends 'base.html' %}
-{% block content %}
-    <h1>Flask-SSE Quickstart</h1>
-    <div>
-        <input type="text" id="msgInput"/>
-        <button id="sendMsgBtn" onclick="send_msg()">Send text message</button>
-    </div>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
 
+    <title>Cover Template for Bootstrap</title>
 
-    {% if contacts %}
-        <p>Contacts list</p>
-        <ul>
-            {% for contact in contacts %}
-                <li>
-                    <div>
-                        <p>{{ contact.to_person.username }}</p>
-                        <button class="btn" onclick='onclick_call("{{ contact.to_person.username }}");'>
-                            make call
-                        </button>
-                    </div>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
-{% endblock %}
+    <!-- Custom styles for this template -->
+    <style>
+        /*
+ * Globals
+ */
 
-{% block static %}
-    <script>
-        var source = new EventSource("{{ url_for('sse.stream', channel=user.username) }}");
-        var user_b;
-        var configuration = {
-            "iceServers": [{"url": "stun:stunserver.org:3478"}]
-        };
-        var RTCPC_OPTIONAL = {optional: [{RtpDataChannels: true}]};
-
-        var rtc_connection = new RTCPeerConnection(configuration);
-
-        rtc_connection.onicecandidate = function (event) {
-            if (event.candidate) {
-                console.log('onicecandidate called');
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_candidate') }}");
-                xhr.send(JSON.stringify({candidate: event.candidate, username: user_b}));
-            }
-        };
-
-        function onclick_call(username) {
-            console.log('button clicked');
-            user_b = username;
-            rtc_connection.createOffer().then(function (offer) {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_offer') }}");
-                xhr.onload = function () {
-                    if (this.status === 200) {
-                        console.log('offer send successfully');
-                    } else {
-                        alert("offer request failed");
-                    }
-                };
-                xhr.send(JSON.stringify({username: username, offer: offer}));
-                rtc_connection.setLocalDescription(offer);
-            }, null);
+        /* Links */
+        a,
+        a:focus,
+        a:hover {
+            color: #fff;
         }
 
-        source.addEventListener('offer', function (event) {
-            console.log('offer request received');
-            var data = JSON.parse(event.data);
-            rtc_connection.setRemoteDescription(new RTCSessionDescription((data.offer)));
-            user_b = data.username;
+        /* Custom default button */
+        .btn-secondary,
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            color: #333;
+            text-shadow: none; /* Prevent inheritance from `body` */
+            background-color: #fff;
+            border: .05rem solid #fff;
+        }
 
-            rtc_connection.createAnswer().then(function (answer) {
-                rtc_connection.setLocalDescription(answer);
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_answer') }}");
-                xhr.onload = function () {
-                    if (this.status === 200) {
-                        console.log('answer request send');
-                    }
-                };
-                xhr.send(JSON.stringify({answer: answer, username: data.username}));
-            }, null)
-        }, false);
+        html,
+        body {
+            height: 100%;
+            background-color: #126;
+        }
 
-        source.addEventListener('answer', function (event) {
-            console.log('answer received');
-            var data = JSON.parse(event.data);
-            rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
-        }, false);
+        body {
+            display: -ms-flexbox;
+            display: flex;
+            color: #fff;
+            text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
+            box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
+        }
 
-        source.addEventListener('candidate', function (event) {
-            console.log('candidate received');
-            var data = JSON.parse(event.data);
-            rtc_connection.addIceCandidate(new RTCIceCandidate(data.candidate));
-        }, false);
+        .cover-container {
+            max-width: 42em;
+        }
 
-        var dataChannelOptions = {
-            reliable: true
-        };
-        console.log('hey there');
 
-        dataChannel = rtc_connection.createDataChannel("myDataChannel", dataChannelOptions);
+        /*
+         * Header
+         */
+        .masthead {
+            margin-bottom: 2rem;
+        }
 
-        dataChannel.onerror = function (error) {
-            console.log("Error:", error);
-        };
+        .masthead-brand {
+            margin-bottom: 0;
+        }
 
-        dataChannel.onmessage = function (event) {
-            console.log("Got message:");
-        };
+        .nav-masthead .nav-link {
+            padding: .25rem 0;
+            font-weight: 700;
+            color: rgba(255, 255, 255, .5);
+            background-color: transparent;
+            border-bottom: .25rem solid transparent;
+        }
 
-        dataChannel.onopen = function (event) {
-            dataChannel.send("hi");
-        };
+        .nav-masthead .nav-link:hover,
+        .nav-masthead .nav-link:focus {
+            border-bottom-color: rgba(255, 255, 255, .25);
+        }
 
-    </script>
+        .nav-masthead .nav-link + .nav-link {
+            margin-left: 1rem;
+        }
 
-{% endblock %}
+        .nav-masthead .active {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
 
+        @media (min-width: 48em) {
+            .masthead-brand {
+                float: left;
+            }
+
+            .nav-masthead {
+                float: right;
+            }
+        }
+
+
+        /*
+         * Cover
+         */
+        .cover {
+            padding: 0 1.5rem;
+        }
+
+        .cover .btn-lg {
+            padding: .75rem 1.25rem;
+            font-weight: 700;
+        }
+
+
+        /*
+         * Footer
+         */
+        .mastfoot {
+            color: rgba(255, 255, 255, .5);
+        }
+    </style>
+</head>
+
+<body class="text-center">
+
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    <header class="masthead mb-auto">
+        <div class="inner">
+            <h3 class="masthead-brand">PyChat</h3>
+            <nav class="nav nav-masthead justify-content-center">
+                <a class="nav-link" href="{{ url_for('logout') }}">logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <main role="main" class="inner cover">
+        <h1 class="cover-heading">PyChat</h1>
+        <p class="lead">Connect to peoples using rooms</p>
+        <p class="lead">
+            <button class="btn btn-lg btn-secondary">Create a room</button>
+            <button class="btn btn-lg btn-secondary">join a room</button>
+        </p>
+    </main>
+
+    <footer class="mastfoot mt-auto">
+        <div class="inner">
+            <p>internet engineering project</p>
+        </div>
+    </footer>
+</div>
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery-slim.min.js"><\/script>')</script>
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+        integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+</body>
+</html>
