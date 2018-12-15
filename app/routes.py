@@ -92,6 +92,4 @@ def join_room():
 @App.route('/')
 @login_required
 def index():
-    return render_template(
-        "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
-    )
+    return render_template("index.html", user=current_user)
