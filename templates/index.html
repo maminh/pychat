@@ -26,31 +26,6 @@
 {% endblock %}
 
 {% block static %}
-    {##}
-    {#    <script>#}
-    {#        var source = new EventSource("{{ url_for('sse.stream', channel=user.username) }}");#}
-    {#        source.addEventListener('greeting', function (event) {#}
-    {#            var data = JSON.parse(event.data);#}
-    {#            alert("The server says " + data.message);#}
-    {#        }, false);#}
-    {#        source.addEventListener('error', function (event) {#}
-    {#            alert("Failed to connect to event stream. Is Redis running?");#}
-    {#        }, false);#}
-    {#        source.addEventListener('offer', function (event) {#}
-    {#        }, false);#}
-    {#    </script>#}
-    {#    <script>#}
-    {#    var xhr = new XMLHttpRequest();#}
-    {#    xhr.open('POST', '/call');#}
-    {#    xhr.onload = function () {#}
-    {#        if (this.status === 200) {#}
-    {#            console.log(this.response)#}
-    {#        }#}
-    {#    };#}
-    {#    xhr.send(JSON.stringify({username:"amin"}))#}
-    {##}
-    {#    </script>#}
-
     <script>
         var source = new EventSource("{{ url_for('sse.stream', channel=user.username) }}");
         var user_b;
@@ -59,7 +34,7 @@
         };
         var RTCPC_OPTIONAL = {optional: [{RtpDataChannels: true}]};
 
-        var rtc_connection = new webkitRTCPeerConnection(configuration, RTCPC_OPTIONAL);
+        var rtc_connection = new RTCPeerConnection(configuration);
 
         rtc_connection.onicecandidate = function (event) {
             if (event.candidate) {
@@ -118,6 +93,25 @@
             var data = JSON.parse(event.data);
             rtc_connection.addIceCandidate(new RTCIceCandidate(data.candidate));
         }, false);
+
+        var dataChannelOptions = {
+            reliable: true
+        };
+        console.log('hey there');
+
+        dataChannel = rtc_connection.createDataChannel("myDataChannel", dataChannelOptions);
+
+        dataChannel.onerror = function (error) {
+            console.log("Error:", error);
+        };
+
+        dataChannel.onmessage = function (event) {
+            console.log("Got message:");
+        };
+
+        dataChannel.onopen = function (event) {
+            dataChannel.send("hi");
+        };
 
     </script>
 
