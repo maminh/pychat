@@ -32,6 +32,14 @@ HOST = 'server running host'
 
 mysql used for database.
 
+create database using this SQL command:
+
+```mysql
+CREATE SCHEMA `me_chat_test` DEFAULT CHARACTER SET utf8 ;
+```
+
+
+
 run the server using start.py
 
 
