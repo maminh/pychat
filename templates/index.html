@@ -105,7 +105,11 @@
                                required
                                size="32" type="text" value="">
                     </div>
-                    <button type="button" class="btn btn-danger" onclick="startSession()">Start Session</button>
+                    <button id="session_btn" type="button" class="btn btn-danger"
+                            onclick="startSession(document.querySelector('#create_roomName').value)"
+                            disabled>
+                        Start Session
+                    </button>
                 </div>
             </div>
             <div id="create_notifications" class="bg-info"></div>
@@ -142,7 +146,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="joinRoomBtn()">Join</button>
+                <button type="button" class="btn btn-primary"
+                        onclick="joinRoomBtn()">Join
+                </button>
             </div>
         </div>
     </div>
@@ -174,17 +180,26 @@
     var configuration = {
         "iceServers": [{"url": "stun:stunserver.org:3478"}]
     };
-    var room;
+
+    $('#joinModal').on('hidden.bs.modal', function () {
+        close();
+    });
+
+    $('#createModal').on('hidden.bs.modal', function () {
+        close();
+    });
 
     function createRoomBtn() {
         console.log('create room called');
         var room_name = document.querySelector('#create_roomName').value;
         var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
         sse_connection = new EventSource(stream_url);
-        room = room_name;
         sse_connection.addEventListener('join', function (event) {
             var data = JSON.parse(event.data);
             notif("create", data.username + " joined", "alert");
+            if (data.username !== "{{ user.username }}") {
+                document.querySelector('#session_btn').disabled = false;
+            }
         }, null);
 
         sse_connection.addEventListener('answer', function (event) {
@@ -200,7 +215,6 @@
     function joinRoomBtn() {
         console.log('join room called');
         var room_name = document.querySelector('#join_roomName').value;
-        room = room_name;
         var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
         sse_connection = new EventSource(stream_url);
         rtc_connection = new RTCPeerConnection(configuration);
@@ -210,7 +224,7 @@
                 notif('join', 'onicecandidate called', 'alert');
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('send_candidate') }}");
-                xhr.send(JSON.stringify({candidate: event.candidate, room: room}));
+                xhr.send(JSON.stringify({candidate: event.candidate, room: room_name}));
             }
         };
 
@@ -252,7 +266,7 @@
         xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
     }
 
-    function startSession() {
+    function startSession(room_name) {
         console.log('session started');
         notif("create", "session started", "alert");
         rtc_connection = new RTCPeerConnection(configuration);
@@ -262,7 +276,7 @@
                 notif('create', 'onicecandidate called', 'alert');
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('send_candidate') }}");
-                xhr.send(JSON.stringify({candidate: event.candidate, room: room}));
+                xhr.send(JSON.stringify({candidate: event.candidate, room: room_name}));
             }
         };
 
@@ -275,7 +289,8 @@
                     notif("create", 'offer send successfully', "alert");
                 }
             };
-            xhr.send(JSON.stringify({room: room, offer: offer}));
+            console.log(room_name);
+            xhr.send(JSON.stringify({room: room_name, offer: offer}));
             rtc_connection.setLocalDescription(offer);
         }, null);
 
@@ -312,6 +327,14 @@
         var para = document.createElement("p");
         para.appendChild(document.createTextNode(msg));
         notifications.appendChild(para);
+    }
+
+    function close() {
+        console.log('close');
+        document.querySelector('#create_notifications').innerHTML = '';
+        document.querySelector('#join_notifications').innerHTML = '';
+        rtc_connection.close();
+        sse_connection.close();
     }
 
 </script>
