@@ -1,8 +1,10 @@
+import os
+
 from flask import render_template, redirect, url_for, flash
 from flask_login import login_user, current_user, logout_user
 from peewee import DoesNotExist
 
-from app import App
+from app import App, profiles
 from app.forms import LoginForm, RegistrationForm
 from app.models import User
 
@@ -14,7 +16,10 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         user = User(username=form.username.data)
+        filename = user.username + os.path.splitext(form.photo.data.filename)[1]
         user.set_password(form.password.data)
+        user.profile = filename
+        profiles.save(form.photo.data, name=filename)
         user.save()
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))

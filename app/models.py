@@ -24,6 +24,8 @@ class Model(db.Model):
 class User(UserMixin, Model):
     username = db.CharField(unique=True)
     password = db.CharField()
+    profile = db.CharField(max_length=512)
+
 
     def set_password(self, password):
         self.password = generate_password_hash(password)

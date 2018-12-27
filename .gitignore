@@ -231,3 +231,5 @@ dmypy.json
 .idea/*
 
 local_params.py
+
+uploads/*
