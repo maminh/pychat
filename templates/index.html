@@ -30,7 +30,7 @@
         html,
         body {
             height: 100%;
-            background-image: url("../static/background.jpg");
+            background-image: url("{{ url_for('static', filename='background.jpg') }}");
             background-position: unset; /* Center the image */
             background-repeat: no-repeat; /* Do not repeat the image */
             background-size: cover; /* Resize the background image to cover the entire container */
@@ -48,7 +48,7 @@
         }
 
         .nav-masthead .nav-link {
-            padding: .25rem 0;
+            {#padding: .25rem 0;#}
             font-weight: 700;
             color: #ffffff;
             background-color: transparent;
@@ -74,7 +74,9 @@
         <div class="inner">
             <h3 class="masthead-brand">PyChat</h3>
             <nav class="nav nav-masthead justify-content-center">
+                <a class="nav-link" href="{{ url_for('contacts') }}">contacts</a>
                 <a class="nav-link" href="{{ url_for('logout') }}">logout</a>
+
             </nav>
         </div>
     </header>

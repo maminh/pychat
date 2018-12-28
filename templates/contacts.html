@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Widget</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css'>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* Google Fonts */
+        @import url(https://fonts.googleapis.com/css?family=Open+Sans);
+
+        /* set global font to Open Sans */
+        body {
+            font-family: 'Open Sans', 'sans-serif';
+            height: 100%;
+            background-image: url("{{ url_for('static', filename='chat.jpg') }}");
+            background-position: unset; /* Center the image */
+            background-repeat: no-repeat; /* Do not repeat the image */
+            background-size: cover; /* Resize the background image to cover the entire container */
+            box-shadow: #333333;
+        }
+
+
+        /* header */
+        h1 {
+            color: #55acee;
+            text-align: center;
+        }
+
+        /* header/copyright link */
+        .link {
+            text-decoration: none;
+            color: #55acee;
+            border-bottom: 2px dotted #55acee;
+            transition: .3s;
+            -webkit-transition: .3s;
+            -moz-transition: .3s;
+            -o-transition: .3s;
+            cursor: url(http://cur.cursors-4u.net/symbols/sym-1/sym46.cur), auto;
+        }
+
+        .link:hover {
+            color: #2ecc71;
+            border-bottom: 2px dotted #2ecc71;
+        }
+
+        /* button div */
+        #buttons {
+            text-align: center;
+        }
+
+        /* start da css for da buttons */
+        .btn {
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 15px;
+            text-decoration: none;
+            color: #fff;
+            position: relative;
+            display: inline-block;
+        }
+
+        .btn:active {
+            transform: translate(0px, 5px);
+            -webkit-transform: translate(0px, 5px);
+            box-shadow: 0px 1px 0px 0px;
+        }
+
+        .blue {
+            background-color: #55acee;
+            box-shadow: 0px 5px 0px 0px #3C93D5;
+        }
+
+        .blue:hover {
+            background-color: #6FC6FF;
+        }
+
+        .green {
+            background-color: #2ecc71;
+            box-shadow: 0px 5px 0px 0px #15B358;
+        }
+
+        .green:hover {
+            background-color: #48E68B;
+        }
+
+        .red {
+            background-color: #e74c3c;
+            box-shadow: 0px 5px 0px 0px #CE3323;
+        }
+
+        .red:hover {
+            background-color: #FF6656;
+        }
+
+        .purple {
+            background-color: #9b59b6;
+            box-shadow: 0px 5px 0px 0px #82409D;
+        }
+
+        .purple:hover {
+            background-color: #B573D0;
+        }
+
+        .orange {
+            background-color: #e67e22;
+            box-shadow: 0px 5px 0px 0px #CD6509;
+        }
+
+        .orange:hover {
+            background-color: #FF983C;
+        }
+
+        .yellow {
+            background-color: #f1c40f;
+            box-shadow: 0px 5px 0px 0px #D8AB00;
+        }
+
+        .yellow:hover {
+            background-color: #FFDE29;
+        }
+
+        /* copyright stuffs.. */
+        p {
+            text-align: center;
+            color: #55acee;
+        }
+
+        .buttons {
+            padding-left: 35px;
+        }
+
+        .profile_pic {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+        }
+    </style>
+
+
+</head>
+
+<body>
+
+<div class="container clearfix">
+    <div class="people-list" id="people-list">
+        <div class="search">
+            <input type="text" placeholder="contact" id="search_text"/>
+
+        </div>
+        <div class="buttons">
+            <a href="{{ url_for('index') }}" class="btn blue">Home</a>
+            <a class="btn green" onclick="addOnclick()">Add contact</a>
+        </div>
+        <ul class="list">
+            {% for contact in contacts %}
+                <li class="clearfix"
+                    onclick="changePage('{{ contact.contact.username }}', '{{ contact.contact.profile }}')">
+
+                    <img class="profile_pic" src="{{ contact.contact.profile }}" alt="avatar"/>
+                    <div class="about">
+                        <div class="name">{{ contact.contact.username }}</div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="chat">
+        <div class="chat-header clearfix">
+            <img class="profile_pic" src="{{ user.profile }}" alt="avatar" id="profile_title"/>
+
+            <div class="chat-about">
+                <div class="chat-with"><h6 id="page_title">Start chat with some one</h6></div>
+            </div>
+        </div> <!-- end chat-header -->
+
+        <div class="chat-history">
+            <ul id="chat_list">
+
+                <li>
+                    <div class="message-data">
+                        <span class="message-data-name"><i class="fa fa-circle online"></i> Vincent</span>
+                        <span class="message-data-time">10:20 AM, Today</span>
+                    </div>
+                    <div class="message my-message">
+                        Actually everything was fine. I'm very excited to show this to our team.
+                    </div>
+                </li>
+
+            </ul>
+
+        </div> <!-- end chat-history -->
+
+        <div class="chat-message clearfix">
+            <textarea name="message-to-send" id="message-to-send" placeholder="Type your message" rows="3"></textarea>
+
+            <button onclick="sendMsg()">Send</button>
+
+        </div> <!-- end chat-message -->
+
+    </div> <!-- end chat -->
+
+</div> <!-- end container -->
+
+
+<script id="message-template" type="text/x-handlebars-template">
+    <li class="clearfix">
+        <div class="message-data align-right">
+            <span class="message-data-time">{{ time }}, Today</span> &nbsp; &nbsp;
+            <span class="message-data-name">Olia</span> <i class="fa fa-circle me"></i>
+        </div>
+        <div class="message other-message float-right">
+            {{ messageOutput }}
+        </div>
+    </li>
+</script>
+
+
+<script src='http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+
+<script src='http://cdnjs.cloudflare.com/ajax/libs/list.js/1.1.1/list.min.js'></script>
+
+
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+
+<script>
+    var current_user;
+    var chat_list = document.querySelector('#chat_list');
+    var chat_text = document.querySelector('#message-to-send');
+
+    function addOnclick() {
+        var contact_name = document.querySelector('#search_text').value;
+        if (contact_name) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', "{{ url_for('add_contact') }}");
+            xhr.onload = function () {
+                if (this.status === 200) {
+                    alert('contact added');
+                    location.reload();
+                }
+            };
+            xhr.send(JSON.stringify({username: contact_name}));
+        }
+    }
+
+    function changePage(username, profile) {
+        document.querySelector('#page_title').innerHTML = username;
+        document.querySelector('#profile_title').setAttribute('src', profile);
+        current_user = username;
+        chat_list.innerHTML = '';
+        chat_text.value = '';
+    }
+
+    function sendMsg() {
+        var li = document.createElement('li');
+        var div_data = document.createElement('div');
+        var span_date = document.createElement('span');
+        var span_user = document.createElement('span');
+        var msg_div = document.createElement('div');
+
+        li.setAttribute('class', 'clearfix');
+        div_data.setAttribute('class', "message-data align-right");
+        span_date.setAttribute('class', 'message-data-time');
+        span_date.innerText = new Date().toDateString();
+        span_user.setAttribute('class', 'message-data-name');
+        div_data.appendChild(span_date);
+        div_data.appendChild(span_user);
+        msg_div.setAttribute('class', 'message other-message float-right');
+        msg_div.innerText = chat_text.value;
+
+        li.appendChild(div_data);
+        li.appendChild(msg_div);
+
+        chat_list.appendChild(li);
+        chat_text.value = '';
+
+
+    }
+</script>
+
+
+</body>
+
+</html>

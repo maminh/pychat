@@ -18,7 +18,7 @@ def register():
         user = User(username=form.username.data)
         filename = user.username + os.path.splitext(form.photo.data.filename)[1]
         user.set_password(form.password.data)
-        user.profile = filename
+        user.profile = profiles.url(filename)
         profiles.save(form.photo.data, name=filename)
         user.save()
         flash('Congratulations, you are now a registered user!')

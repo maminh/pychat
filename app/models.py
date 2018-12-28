@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import peewee as db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -26,9 +28,20 @@ class User(UserMixin, Model):
     password = db.CharField()
     profile = db.CharField(max_length=512)
 
-
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
+
+
+class Contact(Model):
+    owner = db.ForeignKeyField(User)
+    contact = db.ForeignKeyField(User)
+
+
+class Message(Model):
+    sender = db.ForeignKeyField(User)
+    receiver = db.ForeignKeyField(User)
+    msg = db.CharField(max_length=512)
+    datetime = db.DateTimeField(default=datetime.now())

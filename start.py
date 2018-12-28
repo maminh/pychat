@@ -1,11 +1,17 @@
 import os
 
 from app import App, socket_io
-from app.models import User
+from app.models import User, Contact, Message
 from local_params import DEBUG_MODE, HOST
 
 if not User.table_exists():
     User.create_table()
+
+if not Contact.table_exists():
+    Contact.create_table()
+
+if not Message.table_exists():
+    Message.create_table()
 
 if not os.path.exists('media'):
     os.mkdir('media')
