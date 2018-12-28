@@ -1,13 +1,18 @@
 from json import loads
 
 from flask import render_template, redirect, url_for, flash, request, Response
+from flask.views import MethodView
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_sse import sse
 from peewee import DoesNotExist
 
+from flask import session
 from app import App
 from app.forms import LoginForm, RegistrationForm, AddContactForm
 from app.models import User, Contact
+from flask_socketio import SocketIO, send
+
+from start import socketio
 
 
 @App.route('/register', methods=['GET', 'POST'])
@@ -97,3 +102,48 @@ def index():
     return render_template(
         "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
     )
+
+
+'''class ChatroomView(MethodView):
+    def get(self):
+        print(session['room'])
+        return render_template('chatroom.html', title=session['room'],user=current_user)
+    def post(self):
+         print request.json
+         session['name'] = request.json['name']
+         session['room'] = request.json['room']
+         print('url : {0}'.format(url_for('create_chatroom')))
+         return redirect(self.get())
+
+App.add_url_rule('/chatroom',view_func=ChatroomView.as_view('create_chatroom'))
+'''
+
+
+@App.route('/chatroom', methods=['POST'])
+@login_required
+def create_chatroom():
+    print request.json
+    session['name'] = request.json['name']
+    session['room'] = request.json['room']
+    print('url : {0}'.format(url_for('create_chatroom')))
+    return Response('ok', status=200)
+
+
+@App.route('/room', methods=['GET'])
+@login_required
+def get_room():
+    if request.method == 'GET':
+        print(session['room'])
+        return render_template(
+            "chatroom.html", title=session['room'], user=current_user, messages=[]
+        )
+
+
+@socketio.on("joined", namespace='/chatroom')
+def joined(message):
+    print('joined')
+    print(message)
+
+@socketio.on('connect', namespace='/chatroom')
+def connect(message):
+    print("connect")
