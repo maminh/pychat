@@ -177,7 +177,8 @@
             <img class="profile_pic" src="{{ user.profile }}" alt="avatar" id="profile_title"/>
 
             <div class="chat-about">
-                <div class="chat-with"><h6 id="page_title">Start chat with some one</h6></div>
+                <div class="chat-with"><h6 id="page_title">{{ user.username }}</h6></div>
+                <div class="chat-num-messages" id="page_subtitle">connecting...</div>
             </div>
         </div> <!-- end chat-header -->
 
@@ -199,9 +200,10 @@
         </div> <!-- end chat-history -->
 
         <div class="chat-message clearfix">
-            <textarea name="message-to-send" id="message-to-send" placeholder="Type your message" rows="3"></textarea>
+            <textarea name="message-to-send" id="message-to-send" placeholder="Type your message" rows="3"
+                      disabled></textarea>
 
-            <button onclick="sendMsg()">Send</button>
+            <button id="send_btn" onclick="sendMsg()" disabled>Send</button>
 
         </div> <!-- end chat-message -->
 
@@ -222,6 +224,7 @@
     </li>
 </script>
 
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
 
 <script src='http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
 
@@ -234,6 +237,22 @@
     var current_user;
     var chat_list = document.querySelector('#chat_list');
     var chat_text = document.querySelector('#message-to-send');
+    var socket;
+
+    function uuid() {
+        function randomDigit() {
+            if (crypto && crypto.getRandomValues) {
+                var rands = new Uint8Array(1);
+                crypto.getRandomValues(rands);
+                return (rands[0] % 16).toString(16);
+            } else {
+                return ((Math.random() * 16) | 0).toString(16);
+            }
+        }
+
+        var crypto = window.crypto || window.msCrypto;
+        return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
+    }
 
     function addOnclick() {
         var contact_name = document.querySelector('#search_text').value;
@@ -253,12 +272,17 @@
     function changePage(username, profile) {
         document.querySelector('#page_title').innerHTML = username;
         document.querySelector('#profile_title').setAttribute('src', profile);
+        document.querySelector('#message-to-send').disabled = false;
+        document.querySelector('#send_btn').disabled = false;
         current_user = username;
         chat_list.innerHTML = '';
         chat_text.value = '';
+
+        socket.emit('join', JSON.stringify({username: current_user}))
     }
 
-    function sendMsg() {
+    function rcv_msg(data) {
+        var json = JSON.parse(data);
         var li = document.createElement('li');
         var div_data = document.createElement('div');
         var span_date = document.createElement('span');
@@ -266,23 +290,43 @@
         var msg_div = document.createElement('div');
 
         li.setAttribute('class', 'clearfix');
-        div_data.setAttribute('class', "message-data align-right");
+        if (json['username'] !== "{{ user.username }}")
+            div_data.setAttribute('class', "message-data align-right");
+        else
+            div_data.setAttribute('class', "message-data");
         span_date.setAttribute('class', 'message-data-time');
-        span_date.innerText = new Date().toDateString();
+        span_date.innerText = json['date'];
         span_user.setAttribute('class', 'message-data-name');
         div_data.appendChild(span_date);
         div_data.appendChild(span_user);
-        msg_div.setAttribute('class', 'message other-message float-right');
-        msg_div.innerText = chat_text.value;
+        if (json['username'] !== "{{ user.username }}")
+            msg_div.setAttribute('class', 'message other-message float-right');
+        else
+            msg_div.setAttribute('class', 'message message my-message');
+        msg_div.innerText = json['msg'];
 
         li.appendChild(div_data);
         li.appendChild(msg_div);
 
         chat_list.appendChild(li);
-        chat_text.value = '';
-
 
     }
+
+    function sendMsg() {
+        socket.emit('send_message', JSON.stringify(
+            {msg: chat_text.value, username: current_user, date: new Date().toDateString()}
+        ));
+        chat_text.value = '';
+    }
+
+    $(document).ready(function () {
+        var url = 'http://' + document.domain + ':' + location.port + '/chat';
+        socket = io.connect(url);
+        document.querySelector('#page_subtitle').innerHTML = 'online';
+        socket.on('message', function (msg) {
+            rcv_msg(msg);
+        });
+    });
 </script>
 
 

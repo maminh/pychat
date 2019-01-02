@@ -74,7 +74,6 @@
         <div class="inner">
             <h3 class="masthead-brand">PyChat</h3>
             <nav class="nav nav-masthead justify-content-center">
-                <a class="nav-link" href="{{ url_for('contacts') }}">contacts</a>
                 <a class="nav-link" href="{{ url_for('logout') }}">logout</a>
 
             </nav>
@@ -95,7 +94,7 @@
         </p>
 
         <p class="lead">
-            <a href="{{ url_for('chat_room') }}">
+            <a href="{{ url_for('contacts') }}">
                 <button class="btn btn-lg btn-warning">
                     chat room
                 </button>
@@ -272,7 +271,7 @@
                 rtc_connection.setLocalDescription(answer);
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('send_answer') }}");
-                xhr.onload = function () {
+                xhr.onload = function (e) {
                     if (this.status === 200) {
                         notif("join", 'answer request send', "alert");
                     }
