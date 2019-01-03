@@ -182,21 +182,8 @@
             </div>
         </div> <!-- end chat-header -->
 
-        <div class="chat-history">
-            <ul id="chat_list">
-
-                <li>
-                    <div class="message-data">
-                        <span class="message-data-name"><i class="fa fa-circle online"></i> Vincent</span>
-                        <span class="message-data-time">10:20 AM, Today</span>
-                    </div>
-                    <div class="message my-message">
-                        Actually everything was fine. I'm very excited to show this to our team.
-                    </div>
-                </li>
-
-            </ul>
-
+        <div class="chat-history" id="history">
+            <ul id="chat_list"></ul>
         </div> <!-- end chat-history -->
 
         <div class="chat-message clearfix">
@@ -239,21 +226,6 @@
     var chat_text = document.querySelector('#message-to-send');
     var socket;
 
-    function uuid() {
-        function randomDigit() {
-            if (crypto && crypto.getRandomValues) {
-                var rands = new Uint8Array(1);
-                crypto.getRandomValues(rands);
-                return (rands[0] % 16).toString(16);
-            } else {
-                return ((Math.random() * 16) | 0).toString(16);
-            }
-        }
-
-        var crypto = window.crypto || window.msCrypto;
-        return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
-    }
-
     function addOnclick() {
         var contact_name = document.querySelector('#search_text').value;
         if (contact_name) {
@@ -270,19 +242,30 @@
     }
 
     function changePage(username, profile) {
-        document.querySelector('#page_title').innerHTML = username;
-        document.querySelector('#profile_title').setAttribute('src', profile);
-        document.querySelector('#message-to-send').disabled = false;
-        document.querySelector('#send_btn').disabled = false;
         current_user = username;
-        chat_list.innerHTML = '';
-        chat_text.value = '';
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/msgs/', true);
+        xhr.onload = function () {
+            document.querySelector('#page_title').innerHTML = username;
+            document.querySelector('#profile_title').setAttribute('src', profile);
+            document.querySelector('#message-to-send').disabled = false;
+            document.querySelector('#send_btn').disabled = false;
+            chat_list.innerHTML = '';
+            chat_text.value = '';
+            var data = JSON.parse(this.responseText);
 
-        socket.emit('join', JSON.stringify({username: current_user}))
+            data.forEach(function (entry) {
+                rcv_msg(entry);
+            });
+
+            socket.emit('join', JSON.stringify({username: current_user}));
+        };
+        xhr.send(JSON.stringify({username: current_user}));
+
+
     }
 
-    function rcv_msg(data) {
-        var json = JSON.parse(data);
+    function rcv_msg(json) {
         var li = document.createElement('li');
         var div_data = document.createElement('div');
         var span_date = document.createElement('span');
@@ -290,16 +273,16 @@
         var msg_div = document.createElement('div');
 
         li.setAttribute('class', 'clearfix');
-        if (json['username'] !== "{{ user.username }}")
+        if (json['sender'] === "{{ user.username }}")
             div_data.setAttribute('class', "message-data align-right");
         else
             div_data.setAttribute('class', "message-data");
         span_date.setAttribute('class', 'message-data-time');
-        span_date.innerText = json['date'];
+        span_date.innerText = json['datetime'];
         span_user.setAttribute('class', 'message-data-name');
         div_data.appendChild(span_date);
         div_data.appendChild(span_user);
-        if (json['username'] !== "{{ user.username }}")
+        if (json['sender'] === "{{ user.username }}")
             msg_div.setAttribute('class', 'message other-message float-right');
         else
             msg_div.setAttribute('class', 'message message my-message');
@@ -309,14 +292,24 @@
         li.appendChild(msg_div);
 
         chat_list.appendChild(li);
+        scroll();
 
     }
 
     function sendMsg() {
+        var date = new Date();
         socket.emit('send_message', JSON.stringify(
-            {msg: chat_text.value, username: current_user, date: new Date().toDateString()}
+            {
+                msg: chat_text.value, receiver: current_user,
+                date: date.toDateString(), sender: "{{ user.username }}", time: date.toTimeString()
+            }
         ));
         chat_text.value = '';
+    }
+
+    function scroll() {
+        var tag = document.querySelector('#history');
+        tag.scrollTop = tag.scrollHeight;
     }
 
     $(document).ready(function () {
@@ -324,7 +317,7 @@
         socket = io.connect(url);
         document.querySelector('#page_subtitle').innerHTML = 'online';
         socket.on('message', function (msg) {
-            rcv_msg(msg);
+            rcv_msg(JSON.parse(msg));
         });
     });
 </script>

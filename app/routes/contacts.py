@@ -6,11 +6,13 @@ from flask_login import login_required, current_user
 from app import App
 from app.models import Contact, User
 
+
 @App.route('/contacts/')
 @login_required
 def contacts():
     return render_template(
-        'contacts.html', user=current_user, contacts=Contact.select().where(Contact.owner==current_user.id)
+        'contacts.html', user=current_user,
+        contacts=Contact.select().where(Contact.owner == current_user.id).order_by(Contact.contact)
     )
 
 
@@ -27,4 +29,3 @@ def add_contact():
         return Response('user not found'), 404
     Contact.get_or_create(owner=current_user.id, contact=user.id)
     return Response('successful'), 200
-

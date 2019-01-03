@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import peewee as db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -44,4 +42,4 @@ class Message(Model):
     sender = db.ForeignKeyField(User)
     receiver = db.ForeignKeyField(User)
     msg = db.CharField(max_length=512)
-    datetime = db.DateTimeField(default=datetime.now())
+    datetime = db.DateTimeField()
