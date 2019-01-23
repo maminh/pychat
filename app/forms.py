@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from flask_wtf.file import FileRequired
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, FileField
 from wtforms.validators import DataRequired, EqualTo, ValidationError
 
 from app.models import User
@@ -30,13 +31,7 @@ class RegistrationForm(FlaskForm):
     #     if user is not None:
     #         raise ValidationError('Please use a different email address.')
 
-
-class AddContactForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    submit = SubmitField('Add contact')
-
-    def validate_username(self, username):
-        user = User.select().where(User.username == username.data).first()
-        if user is None:
-            raise ValidationError('Please use a different username.')
-        self.user_id = user.id
+class VideoForm(FlaskForm):
+    chatID = StringField('chatID',validators=[DataRequired()])
+    streamID = StringField('streamID',validators=[DataRequired()])
+    file = FileField('file',validators=[FileRequired()])

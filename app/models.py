@@ -30,8 +30,3 @@ class User(UserMixin, Model):
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
-
-
-class Contact(Model):
-    from_person = db.ForeignKeyField(User)
-    to_person = db.ForeignKeyField(User)

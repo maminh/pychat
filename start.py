@@ -1,14 +1,9 @@
-from flask_socketio import SocketIO
-
 from app import App
-
+from app.models import User
 from local_params import DEBUG_MODE, HOST
 
-
-socketio = SocketIO()
-
+if not User.table_exists():
+    User.create_table()
 if __name__ == '__main__':
     App.debug = DEBUG_MODE
-    socketio.init_app(App,engineio_logger=True)
-    socketio.run(App)
-    # App.run(threaded=True, host=HOST)
+    App.run(threaded=True, host=HOST)

@@ -1,18 +1,14 @@
+import os
 from json import loads
 
 from flask import render_template, redirect, url_for, flash, request, Response
-from flask.views import MethodView
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_sse import sse
 from peewee import DoesNotExist
 
-from flask import session
-from app import App
-from app.forms import LoginForm, RegistrationForm, AddContactForm
-from app.models import User, Contact
-from flask_socketio import SocketIO, send
-
-from start import socketio
+from app import App, ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+from app.forms import LoginForm, RegistrationForm, VideoForm
+from app.models import User
 
 
 @App.route('/register', methods=['GET', 'POST'])
@@ -55,22 +51,12 @@ def logout():
     return redirect(url_for('index'))
 
 
-@App.route('/add_contact', methods=['GET', 'POST'])
-@login_required
-def add_contact():
-    form = AddContactForm()
-    if form.validate_on_submit():
-        Contact.get_or_create(from_person=current_user.id, to_person=form.user_id)
-        return redirect(url_for('index'))
-    return render_template('add_contact.html', title='add contact', form=form)
-
-
 @App.route('/offer', methods=['POST'])
 @login_required
 def send_offer():
     data = loads(request.data)
     sse.publish(
-        {'username': current_user.username, 'offer': data.get('offer')}, type='offer', channel=data.get('username')
+        {'offer': data.get('offer')}, type='offer', channel=data.get('room')
     )
     return Response('ok', status=200)
 
@@ -80,7 +66,7 @@ def send_offer():
 def send_answer():
     data = loads(request.data)
     sse.publish(
-        {'answer': data.get('answer'), 'username': current_user.username}, type='answer', channel=data.get('username')
+        {'answer': data.get('answer')}, type='answer', channel=data.get('room')
     )
     return Response('ok', status=200)
 
@@ -90,60 +76,47 @@ def send_answer():
 def send_candidate():
     data = loads(request.data)
     sse.publish(
-        {'candidate': data.get('candidate'), 'username': current_user.username},
-        type='candidate', channel=data.get('username')
+        {'candidate': data.get('candidate')},
+        type='candidate', channel=data.get('room')
     )
+    return Response('ok', status=200)
+
+
+@App.route('/join_room', methods=['POST'])
+@login_required
+def join_room():
+    data = loads(request.data)
+    sse.publish({'username': data.get('username')}, type='join', channel=data.get('room'))
     return Response('ok', status=200)
 
 
 @App.route('/')
 @login_required
 def index():
-    return render_template(
-        "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
-    )
+    return render_template("index.html", user=current_user)
 
 
-'''class ChatroomView(MethodView):
-    def get(self):
-        print(session['room'])
-        return render_template('chatroom.html', title=session['room'],user=current_user)
-    def post(self):
-         print request.json
-         session['name'] = request.json['name']
-         session['room'] = request.json['room']
-         print('url : {0}'.format(url_for('create_chatroom')))
-         return redirect(self.get())
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-App.add_url_rule('/chatroom',view_func=ChatroomView.as_view('create_chatroom'))
-'''
+def connection_exists():
+    return True
 
-
-@App.route('/chatroom', methods=['POST'])
+@App.route('/record', methods=['GET', 'POST'])
 @login_required
-def create_chatroom():
-    print request.json
-    session['name'] = request.json['name']
-    session['room'] = request.json['room']
-    print('url : {0}'.format(url_for('create_chatroom')))
-    return Response('ok', status=200)
+def upload():
 
-
-@App.route('/room', methods=['GET'])
-@login_required
-def get_room():
+    form = VideoForm()
     if request.method == 'GET':
-        print(session['room'])
-        return render_template(
-            "chatroom.html", title=session['room'], user=current_user, messages=[]
-        )
-
-
-@socketio.on("joined", namespace='/chatroom')
-def joined(message):
-    print('joined')
-    print(message)
-
-@socketio.on('connect', namespace='/chatroom')
-def connect(message):
-    print("connect")
+        print(current_user)
+        return  render_template('videochat.html')
+    elif request.method == 'POST':
+        if form.validate_on_submit():
+            print(request.files['file'])
+            file = request.files['file']
+            if allowed_file(file.filename):
+                file.save(os.path.join(UPLOAD_FOLDER, file.filename))
+                return Response('ok',status=200)
+        print(form.errors)
+        return Response('Bad request',400)
