@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang = "en">
+
+<head>
+    <meta charset = "utf-8" />
+</head>
+<body>
+<div>
+<video id="localVideo" autoplay></video>
+    <div>
+ <div>
+<video id="remoteVideo" autoplay></video>
+ </div>
+        <div>
+         <input type = "text" id = "msgInput" />
+         <button id = "sendMsgBtn">Send text message</button>
+      </div>
+{% block static %}
+<script>
+    var stream;
+
+
+    navigator.getUserMedia({ video: true, audio: true }, function (s) {
+        stream = s;
+        var video = document.querySelector("video[id='localVideo']");
+
+        //inserting our stream to the video tag
+        video.src = window.URL.createObjectURL(stream);
+    }, function (err) {});
+
+
+
+    var msgInput = document.querySelector('#msgInput');
+    var sendMsgBtn = document.querySelector('#sendMsgBtn');
+
+
+
+
+    var source = new EventSource("{{ url_for('sse.stream', channel=user.username) }}");
+    const configuration = {
+            iceServers: [{ url: 'stun:stun2.1.google.com:19302'  }]
+        };
+
+        var rtc_connection = new RTCPeerConnection(configuration);
+
+        rtc_connection.onicecandidate = function (event) {
+            if (event.candidate) {
+                console.log('onicecandidate called');
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_candidate') }}");
+                xhr.send(JSON.stringify({candidate: event.candidate, username: "{{ caller }}" , callee:"{{ callee }}" , caller:"{{caller}}" }) );
+            }
+        };
+
+
+
+            if("{{user.username}}" == "{{caller}}")
+           {
+
+                rtc_connection.createOffer().then(function (offer) {
+                console.log(typeof offer);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_offer') }}");
+                xhr.onload = function () {
+                    if (this.status === 200) {
+                        console.log('offer send successfully');
+                    } else {
+                        alert("offer request failed");
+                    }
+                };
+                xhr.send(JSON.stringify({username: "{{ caller }}", offer: offer ,callee:"{{ callee }}" , caller:"{{caller}}" }));
+                rtc_connection.setLocalDescription(offer);
+            }, null);
+            }
+
+
+
+
+
+
+
+
+
+
+
+          source.addEventListener('candidate', function (event) {
+            console.log('candidate received');
+            var data = JSON.parse(event.data);
+            rtc_connection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }, false);
+
+
+
+
+
+
+            source.addEventListener('answer', function (event) {
+            console.log('answer received');
+            var data = JSON.parse(event.data);
+            console.log(typeof answer);
+            rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        }, false);
+
+
+
+
+
+
+
+
+
+
+
+        source.addEventListener('offer', function (event) {
+            console.log('offer request received');
+
+            var data = JSON.parse(event.data);
+            rtc_connection.setRemoteDescription(new RTCSessionDescription((data.offer)));
+            console.log(typeof offer);
+
+            rtc_connection.createAnswer().then(function (answer) {
+                console.log(typeof answer);
+                rtc_connection.setLocalDescription(answer);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('send_answer') }}");
+                xhr.onload = function () {
+                    if (this.status === 200) {
+                        console.log('answer request send');
+                    }
+                };
+                xhr.send(JSON.stringify({answer: answer, username: data.username , callee : data.callee , caller:data.caller}));
+
+            }, null)
+        }, false);
+
+
+
+
+        var dataChannelOptions = {
+            reliable: true
+        };
+
+        dataChannel = rtc_connection.createDataChannel("myDataChannel", dataChannelOptions);
+
+        dataChannel.onerror = function (error) {
+            console.log("Error:", error);
+        };
+
+        dataChannel.onmessage = function (event) {
+            console.log("Got message:");
+        };
+
+        dataChannel.onopen = function (event) {
+            dataChannel.send("hi");
+        };
+
+        sendMsgBtn.addEventListener("click", function (event) {
+                    console.log("send message");
+                    var val = msgInput.value;
+                    console.log(rtc_connection.iceConnectionState);
+                    console.log(dataChannel.readyState);
+                    dataChannel.send(val);
+                        });
+
+
+</script>
+{% endblock %}
+</body>
+
+</html>

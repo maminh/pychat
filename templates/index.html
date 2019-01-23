@@ -3,7 +3,7 @@
     <h1>Flask-SSE Quickstart</h1>
     <div>
         <input type="text" id="msgInput"/>
-        <button id="sendMsgBtn" onclick="send_msg()">Send text message</button>
+        <button id="sendMsgBtn" onclick="send_msg()">call with</button>
     </div>
 
 
@@ -28,90 +28,58 @@
 {% block static %}
     <script>
         var source = new EventSource("{{ url_for('sse.stream', channel=user.username) }}");
-        var user_b;
-        var configuration = {
-            "iceServers": [{"url": "stun:stunserver.org:3478"}]
-        };
-        var RTCPC_OPTIONAL = {optional: [{RtpDataChannels: true}]};
-
-        var rtc_connection = new RTCPeerConnection(configuration);
-
-        rtc_connection.onicecandidate = function (event) {
-            if (event.candidate) {
-                console.log('onicecandidate called');
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_candidate') }}");
-                xhr.send(JSON.stringify({candidate: event.candidate, username: user_b}));
-            }
-        };
 
         function onclick_call(username) {
             console.log('button clicked');
-            user_b = username;
-            rtc_connection.createOffer().then(function (offer) {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_offer') }}");
+            var xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ url_for('call') }}");
                 xhr.onload = function () {
                     if (this.status === 200) {
-                        console.log('offer send successfully');
+                        console.log('calling' + username );
                     } else {
-                        alert("offer request failed");
+                        alert("call request failed");
                     }
                 };
-                xhr.send(JSON.stringify({username: username, offer: offer}));
-                rtc_connection.setLocalDescription(offer);
-            }, null);
-        }
+            xhr.send(JSON.stringify({caller: "{{ user.username }}",callee:username}));
+        };
 
-        source.addEventListener('offer', function (event) {
-            console.log('offer request received');
+
+        source.addEventListener('readytoans', function (event) {
+            console.log('call request received');
             var data = JSON.parse(event.data);
-            rtc_connection.setRemoteDescription(new RTCSessionDescription((data.offer)));
-            user_b = data.username;
-
-            rtc_connection.createAnswer().then(function (answer) {
-                rtc_connection.setLocalDescription(answer);
+            console.log(data);
+            var answer = confirm("talk with " + data.caller + " ?")
+            if (answer) {
                 var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_answer') }}");
+                xhr.open('POST', "{{ url_for('callack') }}");
                 xhr.onload = function () {
                     if (this.status === 200) {
-                        console.log('answer request send');
+                        console.log('calling ack' + data.caller );
+                    } else {
+                        alert("call ack request failed");
                     }
                 };
-                xhr.send(JSON.stringify({answer: answer, username: data.username}));
-            }, null)
+            xhr.send(JSON.stringify({caller: data.caller,callee:data.callee}));
+                location.replace('talk/'+data.caller+"/"+data.callee);
+            }
+            else {
+                console.log("im busy");
+            }
         }, false);
 
-        source.addEventListener('answer', function (event) {
-            console.log('answer received');
+
+        source.addEventListener('readytoansack', function (event) {
+            console.log('call request received');
             var data = JSON.parse(event.data);
-            rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            location.replace('talk/'+data.caller+"/"+data.callee);
         }, false);
 
-        source.addEventListener('candidate', function (event) {
-            console.log('candidate received');
-            var data = JSON.parse(event.data);
-            rtc_connection.addIceCandidate(new RTCIceCandidate(data.candidate));
-        }, false);
 
-        var dataChannelOptions = {
-            reliable: true
-        };
-        console.log('hey there');
 
-        dataChannel = rtc_connection.createDataChannel("myDataChannel", dataChannelOptions);
 
-        dataChannel.onerror = function (error) {
-            console.log("Error:", error);
-        };
 
-        dataChannel.onmessage = function (event) {
-            console.log("Got message:");
-        };
 
-        dataChannel.onopen = function (event) {
-            dataChannel.send("hi");
-        };
+
 
     </script>
 

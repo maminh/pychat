@@ -12,6 +12,9 @@ from app.models import User, Contact
 
 @App.route('/register', methods=['GET', 'POST'])
 def register():
+    sse.publish(
+        {'username': "kir"}, type='kir'
+    )
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = RegistrationForm()
@@ -63,9 +66,10 @@ def add_contact():
 @App.route('/offer', methods=['POST'])
 @login_required
 def send_offer():
-    data = loads(request.data)
+
+    data = loads(request.data.decode('utf-8'))
     sse.publish(
-        {'username': current_user.username, 'offer': data.get('offer')}, type='offer', channel=data.get('username')
+        {'username': current_user.username, 'offer': data.get('offer') ,'caller':data.get('caller') , 'callee' : data.get('callee') }, type='offer', channel=data.get('callee')
     )
     return Response('ok', status=200)
 
@@ -73,9 +77,9 @@ def send_offer():
 @App.route('/answer', methods=['POST'])
 @login_required
 def send_answer():
-    data = loads(request.data)
+    data = loads(request.data.decode('utf-8'))
     sse.publish(
-        {'answer': data.get('answer'), 'username': current_user.username}, type='answer', channel=data.get('username')
+        {'answer': data.get('answer'), 'username': current_user.username,'caller':data.get('caller') , 'callee' : data.get('callee')}, type='answer', channel=data.get('caller')
     )
     return Response('ok', status=200)
 
@@ -83,10 +87,11 @@ def send_answer():
 @App.route('/candidate', methods=['POST'])
 @login_required
 def send_candidate():
-    data = loads(request.data)
+    data = loads(request.data.decode('utf-8'))
+    print (data.get('caller') , data.get('callee'))
     sse.publish(
-        {'candidate': data.get('candidate'), 'username': current_user.username},
-        type='candidate', channel=data.get('username')
+        {'candidate': data.get('candidate'), 'username': current_user.username ,'caller':data.get('caller') , 'callee' : data.get('callee')},
+        type='candidate', channel=data.get('callee')
     )
     return Response('ok', status=200)
 
@@ -97,3 +102,35 @@ def index():
     return render_template(
         "index.html", contacts=Contact.select().where(Contact.from_person == current_user.id), user=current_user
     )
+
+@App.route('/call' , methods=['POST'])
+@login_required
+def call():
+    data = loads(request.data.decode('utf-8'))
+    sse.publish(
+        {'caller': data.get('caller'), 'callee': data.get('callee')},
+        type='readytoans', channel=data.get('callee')
+    )
+    return Response('ok', status=200)
+
+@App.route('/callack' , methods=['POST'])
+@login_required
+def callack():
+    data = loads(request.data.decode('utf-8'))
+    sse.publish(
+        {'caller': data.get('caller'), 'callee': data.get('callee')},
+        type='readytoansack', channel =data.get('caller')
+    )
+    return Response('ok', status=200)
+
+
+@App.route('/talk/<caller>/<callee>' , methods=['GET'])
+@login_required
+def talk(caller , callee):
+    return render_template(
+        "talk.html",  user=current_user , callee= callee ,caller=caller
+    )
+
+
+
+
