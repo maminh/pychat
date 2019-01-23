@@ -113,10 +113,11 @@ def upload():
         return  render_template('videochat.html')
     elif request.method == 'POST':
         if form.validate_on_submit():
-            print(request.files['file'])
+            print(current_user)
             file = request.files['file']
             if allowed_file(file.filename):
-                file.save(os.path.join(UPLOAD_FOLDER, file.filename))
+                file.save(os.path.join(UPLOAD_FOLDER + '/streams', str(current_user)+'-'+str(form.chatID.data)+'-'
+                                       + str(form.streamID.data)+'.mp4'))
                 return Response('ok',status=200)
         print(form.errors)
         return Response('Bad request',400)

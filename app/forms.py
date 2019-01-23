@@ -35,3 +35,4 @@ class VideoForm(FlaskForm):
     chatID = StringField('chatID',validators=[DataRequired()])
     streamID = StringField('streamID',validators=[DataRequired()])
     file = FileField('file',validators=[FileRequired()])
+    fin = BooleanField('final')
