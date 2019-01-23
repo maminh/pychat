@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from flask_wtf.file import FileRequired
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, FileField
 from wtforms.validators import DataRequired, EqualTo, ValidationError
 
 from app.models import User
@@ -29,3 +30,8 @@ class RegistrationForm(FlaskForm):
     #     user = User.query.filter_by(email=email.data).first()
     #     if user is not None:
     #         raise ValidationError('Please use a different email address.')
+
+class VideoForm(FlaskForm):
+    chatID = StringField('chatID',validators=[DataRequired()])
+    streamID = StringField('streamID',validators=[DataRequired()])
+    file = FileField('file',validators=[FileRequired()])

@@ -1,3 +1,4 @@
+import os
 from json import loads
 
 from flask import render_template, redirect, url_for, flash, request, Response
@@ -5,8 +6,8 @@ from flask_login import login_user, current_user, logout_user, login_required
 from flask_sse import sse
 from peewee import DoesNotExist
 
-from app import App
-from app.forms import LoginForm, RegistrationForm
+from app import App, ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+from app.forms import LoginForm, RegistrationForm, VideoForm
 from app.models import User
 
 
@@ -93,3 +94,29 @@ def join_room():
 @login_required
 def index():
     return render_template("index.html", user=current_user)
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def connection_exists():
+    return True
+
+@App.route('/record', methods=['GET', 'POST'])
+@login_required
+def upload():
+
+    form = VideoForm()
+    if request.method == 'GET':
+        print(current_user)
+        return  render_template('videochat.html')
+    elif request.method == 'POST':
+        if form.validate_on_submit():
+            print(request.files['file'])
+            file = request.files['file']
+            if allowed_file(file.filename):
+                file.save(os.path.join(UPLOAD_FOLDER, file.filename))
+                return Response('ok',status=200)
+        print(form.errors)
+        return Response('Bad request',400)
