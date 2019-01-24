@@ -224,8 +224,11 @@
             var data = JSON.parse(event.data);
             if (data.username === "{{ user.username }}")
                 notif("create", "you joined", "alert");
-            else
+            else {
                 notif("create", data.username + " joined", "alert");
+                document.querySelector('#session_btn').disabled = false;
+            }
+
         }, null);
 
         sse_connection.addEventListener('answer', function (event) {

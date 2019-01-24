@@ -63,7 +63,7 @@ def create_room():
         'creator': data.get('username'),
         'members': []
     }
-    mem_cache.set(data.get('room'), room_data)
+    mem_cache.set(data.get('room'), room_data, expire=2 * 60)
     sse.publish({'username': data.get('username')}, type='join', channel=data.get('room'))
     return Response('ok', status=200)
 
