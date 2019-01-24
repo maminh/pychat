@@ -31,7 +31,7 @@ class RegistrationForm(FlaskForm):
     #     if user is not None:
     #         raise ValidationError('Please use a different email address.')
 
-class VideoForm(FlaskForm):
+class StreamForm(FlaskForm):
     chatID = StringField('chatID',validators=[DataRequired()])
     streamID = StringField('streamID',validators=[DataRequired()])
     file = FileField('file',validators=[FileRequired()])

@@ -7,8 +7,11 @@ from flask_sse import sse
 from peewee import DoesNotExist
 
 from app import App, ALLOWED_EXTENSIONS, UPLOAD_FOLDER
-from app.forms import LoginForm, RegistrationForm, VideoForm
-from app.models import User
+from app.forms import LoginForm, RegistrationForm, StreamForm
+from app.models import User, StreamModel
+
+from utils import random_name
+from celery_tasks import  merge_streams
 
 
 @App.route('/register', methods=['GET', 'POST'])
@@ -107,17 +110,42 @@ def connection_exists():
 @login_required
 def upload():
 
-    form = VideoForm()
+    form = StreamForm()
     if request.method == 'GET':
-        print(current_user)
         return  render_template('videochat.html')
     elif request.method == 'POST':
         if form.validate_on_submit():
-            print(current_user)
             file = request.files['file']
             if allowed_file(file.filename):
-                file.save(os.path.join(UPLOAD_FOLDER + '/streams', str(current_user)+'-'+str(form.chatID.data)+'-'
-                                       + str(form.streamID.data)+'.mp4'))
+                print('allowd file name')
+                name = random_name()+'.mp4'
+                file.save(os.path.join(UPLOAD_FOLDER + '/streams' , name))
+                streamModel = StreamModel()
+                # print current_user.id
+                # print current_user.username
+                # print form.chatID.data
+                # print User.get_by_id(form.chatID.data).username
+
+                streamModel.peer1ID = current_user.id
+                streamModel.peer2ID =form.chatID.data
+                streamModel.streamID = form.streamID.data
+                streamModel.streamName = name
+                if form.fin.data:
+                    streamModel.fin = True
+                try :
+                    streamModel.save()
+                    print('stream model saved')
+                except Exception as e:
+                    print(e)
+                    print('stream model could not be saved')
+                    return Response('Stream not saved',400)
+                print(form.fin.data)
+                if  form.fin.data:
+                    print('merging streams')
+                    # if StreamModel.get(peerID = form.streamID.data, streamID = current_user, fin = True):
+                    merge_streams(peer1ID= current_user, peer2ID=form.streamID.data)
                 return Response('ok',status=200)
         print(form.errors)
         return Response('Bad request',400)
+
+
