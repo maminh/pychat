@@ -48,8 +48,7 @@
         }
 
         .nav-masthead .nav-link {
-            {#padding: .25rem 0;#}
-            font-weight: 700;
+        {#padding: .25rem 0;#} font-weight: 700;
             color: #ffffff;
             background-color: transparent;
             border-bottom: .25rem solid transparent;
@@ -223,10 +222,10 @@
         sse_connection = new EventSource(stream_url);
         sse_connection.addEventListener('join', function (event) {
             var data = JSON.parse(event.data);
-            notif("create", data.username + " joined", "alert");
-            if (data.username !== "{{ user.username }}") {
-                document.querySelector('#session_btn').disabled = false;
-            }
+            if (data.username === "{{ user.username }}")
+                notif("create", "you joined", "alert");
+            else
+                notif("create", data.username + " joined", "alert");
         }, null);
 
         sse_connection.addEventListener('answer', function (event) {
@@ -234,9 +233,7 @@
             var data = JSON.parse(event.data);
             rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
         }, false);
-
-        joinAnnouncement(room_name);
-
+        createRoom(room_name);
     }
 
     function joinRoomBtn() {
@@ -257,10 +254,13 @@
 
         sse_connection.addEventListener('join', function (event) {
             var data = JSON.parse(event.data);
-            notif("join", data.username + " joined", "alert");
-        }, null);
+            if (data.username === "{{ user.username }}")
+                notif("join", "you joined", "alert");
+            else
+                notif("join", data.username + " joined", "alert");
 
-        joinAnnouncement(room_name);
+        }, null);
+        joinRoom(room_name);
         sse_connection.addEventListener('offer', function (event) {
             notif("join", 'offer request received', "alert");
 
@@ -274,6 +274,7 @@
                 xhr.onload = function (e) {
                     if (this.status === 200) {
                         notif("join", 'answer request send', "alert");
+                        notif("join", data.username + " joined", "alert");
                     }
                 };
                 xhr.send(JSON.stringify({answer: answer, room: room_name}));
@@ -282,12 +283,35 @@
 
     }
 
-    function joinAnnouncement(room_name) {
+    function joinRoom(room_name) {
+        document.querySelector('#join_notifications').innerHTML = '';
         var xhr = new XMLHttpRequest();
         xhr.open('POST', "{{ url_for('join_room') }}");
         xhr.onload = function () {
             if (this.status === 200) {
+                json = JSON.parse(this.responseText);
+                json.members.forEach(function (entry) {
+                    if (!entry === "{{ user.username }}")
+                        notif("join", entry + " joined", "alert");
+                });
+                notif("join", json.creator + " joined", "alert");
+            } else if (this.status === 404)
+                notif("join", 'room not found', "alert");
+            else
+                notif("join", 'error happened try again', "alert");
+        };
+        xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
+    }
+
+    function createRoom(room_name) {
+        document.querySelector('#create_notifications').innerHTML = '';
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', "{{ url_for('create_room') }}");
+        xhr.onload = function () {
+            if (this.status === 200) {
                 console.log('join announcement send');
+            } else if (this.status === 409) {
+                notif("create", 'room already exists. try another one!', "alert");
             }
         };
         xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));

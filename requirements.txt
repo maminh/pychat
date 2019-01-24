@@ -7,3 +7,5 @@ flask-socketio==3.1.2
 
 peewee==3.7.1
 pymysql==0.9.2
+
+pymemcache==2.1.0
