@@ -1,11 +1,23 @@
 from json import loads, dumps
 
-from flask import request, Response
+from flask import request, Response, render_template
 from flask_login import login_required
 from flask_sse import sse
 
 from app import App, mem_cache
 from utils.room import serialize_cache
+
+
+@App.route('/room/video')
+@login_required
+def video_room():
+    return render_template('video_room.html')
+
+
+@App.route('/room/voice')
+@login_required
+def voice_room():
+    return render_template('voice_room.html')
 
 
 @App.route('/room/offer', methods=['POST'])
@@ -47,7 +59,7 @@ def join_room():
     if not room:
         return Response('room not found', status=404)
     room['members'] += [data.get('username')]
-    mem_cache.set(data.get('room'), room)
+    mem_cache.set(data.get('room'), room, expire=2 * 60)
     sse.publish({'username': data.get('username')}, type='join', channel=data.get('room'))
     return Response(dumps(room), status=200)
 
@@ -70,7 +82,7 @@ def create_room():
 
 @App.route('/room/send_signal/', methods=['POST'])
 @login_required
-def send_signal():
+def send_room_signal():
     data = loads(request.data)
     sse.publish({'data': data.get('data')}, type=data.get('type'), channel=data.get('room'))
     return Response('ok', status=200)

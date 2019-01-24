@@ -176,15 +176,13 @@
         </div>
     </div>
 </div>
-
-
 <!-- Bootstrap core JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
-<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery-slim.min.js"><\/script>')</script>
+
 <!-- Optional JavaScript -->
 <!-- jQuery first, then Popper.js, then Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
@@ -202,10 +200,6 @@
 
 <script>
     var sse_connection;
-    var rtc_connection;
-    var configuration = {
-        "iceServers": [{"url": "stun:stunserver.org:3478"}]
-    };
 
     $('#joinModal').on('hidden.bs.modal', function () {
         close();
@@ -230,12 +224,6 @@
             }
 
         }, null);
-
-        sse_connection.addEventListener('answer', function (event) {
-            notif("create", 'answer received', "alert");
-            var data = JSON.parse(event.data);
-            rtc_connection.setRemoteDescription(new RTCSessionDescription(data.answer));
-        }, false);
         createRoom(room_name);
     }
 
@@ -244,17 +232,6 @@
         var room_name = document.querySelector('#join_roomName').value;
         var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
         sse_connection = new EventSource(stream_url);
-        rtc_connection = new RTCPeerConnection(configuration);
-
-        rtc_connection.onicecandidate = function (event) {
-            if (event.candidate) {
-                notif('join', 'onicecandidate called', 'alert');
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_candidate') }}");
-                xhr.send(JSON.stringify({candidate: event.candidate, room: room_name}));
-            }
-        };
-
         sse_connection.addEventListener('join', function (event) {
             var data = JSON.parse(event.data);
             if (data.username === "{{ user.username }}")
@@ -263,27 +240,15 @@
                 notif("join", data.username + " joined", "alert");
 
         }, null);
+
+        sse_connection.addEventListener('session', function (event) {
+            json = JSON.parse(event.data);
+            if (json.data === "video_room")
+                window.open("{{ url_for('video_room') }}", '_self', false);
+            else
+                window.open("{{ url_for('voice_room') }}", '_self', false);
+        }, null);
         joinRoom(room_name);
-        sse_connection.addEventListener('offer', function (event) {
-            notif("join", 'offer request received', "alert");
-
-            var data = JSON.parse(event.data);
-            rtc_connection.setRemoteDescription(new RTCSessionDescription((data.offer)));
-
-            rtc_connection.createAnswer().then(function (answer) {
-                rtc_connection.setLocalDescription(answer);
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_answer') }}");
-                xhr.onload = function (e) {
-                    if (this.status === 200) {
-                        notif("join", 'answer request send', "alert");
-                        notif("join", data.username + " joined", "alert");
-                    }
-                };
-                xhr.send(JSON.stringify({answer: answer, room: room_name}));
-            }, null)
-        }, false);
-
     }
 
     function joinRoom(room_name) {
@@ -323,51 +288,22 @@
     function startSession(room_name) {
         console.log('session started');
         notif("create", "session started", "alert");
-        rtc_connection = new RTCPeerConnection(configuration);
-
-        rtc_connection.onicecandidate = function (event) {
-            if (event.candidate) {
-                notif('create', 'onicecandidate called', 'alert');
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', "{{ url_for('send_candidate') }}");
-                xhr.send(JSON.stringify({candidate: event.candidate, room: room_name}));
-            }
+        var room_type;
+        if (confirm("should session with both of video and voice?"))
+            room_type = 'video_room';
+        else
+            room_type = 'voice_room';
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', "{{ url_for('send_room_signal') }}");
+        xhr.onload = function () {
+            if (!this.status === 200) {
+                notif("create", 'failed to start session, try again!', "alert");
+            } else if (room_type === 'video_room')
+                window.open("{{ url_for('video_room') }}", '_self', false);
+            else
+                window.open("{{ url_for('voice_room') }}", '_self', false);
         };
-
-        rtc_connection.createOffer().then(function (offer) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', "{{ url_for('send_offer') }}");
-            xhr.onload = function () {
-                if (this.status === 200) {
-
-                    notif("create", 'offer send successfully', "alert");
-                }
-            };
-            console.log(room_name);
-            xhr.send(JSON.stringify({room: room_name, offer: offer}));
-            rtc_connection.setLocalDescription(offer);
-        }, null);
-
-        var dataChannelOptions = {
-            reliable: true
-        };
-
-        console.log('session started');
-
-        dataChannel = rtc_connection.createDataChannel("myDataChannel", dataChannelOptions);
-
-        dataChannel.onerror = function (error) {
-            console.log("Error:", error);
-        };
-
-        dataChannel.onmessage = function (event) {
-            console.log("Got message:");
-        };
-
-        dataChannel.onopen = function (event) {
-            console.log("send message:");
-            dataChannel.send("hi");
-        };
+        xhr.send(JSON.stringify({data: room_type, type: "session", room: room_name}))
 
     }
 
@@ -387,8 +323,6 @@
         console.log('close');
         document.querySelector('#create_notifications').innerHTML = '';
         document.querySelector('#join_notifications').innerHTML = '';
-        if (rtc_connection)
-            rtc_connection.close();
         if (sse_connection)
             sse_connection.close();
     }
