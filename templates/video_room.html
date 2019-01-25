@@ -412,7 +412,19 @@
         document.querySelector('#endBtn').disabled = true;
     }
 
-    var peerConnection = new RTCPeerConnection();
+    var configuration = {
+        "iceServers": [
+            {
+                url: "stun:stun.services.mozilla.com"
+            },
+            {
+                url: 'turn:numb.viagenie.ca',
+                credential: 'muazkh',
+                username: 'webrtc@live.com'
+            },
+        ]
+    };
+    var peerConnection = new RTCPeerConnection(configuration);
     var stream;
     var remote_video = document.querySelector('#remote_video');
     var sseConnection;
