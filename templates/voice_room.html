@@ -3,15 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <title>Voice Room</title>
-</head>
-<body>
 
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/button.css') }}">
+
+    <style>
+        body {
+            height: 100%;
+            background-color: #FBFCFF;
+
+        }
+
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="text-center">
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    <header class="masthead mb-auto">
+        <div class="inner">
+            <h3 class="masthead-brand">Voice room</h3>
+            <nav class="nav nav-masthead justify-content-center">
+                <button id="createBtn" class="btn blue" data-toggle="modal" data-target="#createModal">
+                    Create room
+                </button>
+                <button id="joinBtn" class="btn green" data-toggle="modal" data-target="#joinModal">
+                    join room
+                </button>
+                <button id="endBtn" class="btn red" onclick="endBtn()" disabled>
+                    End Call
+                </button>
+                <button id="muteBtn" class="btn orange" onclick="muteBtn()" disabled>
+                    Mute
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main role="main" class="inner cover">
+        <h1 id="timer" class="cover-heading"><label id="hours">00</label>:<label id="minutes">00</label>:<label
+                id="seconds">00</label></h1>
+        <div class="row">
+            <div class="col-sm-6 col-centered">
+                <div align="center" class="embed-responsive embed-responsive-16by9">
+                    <audio style="border: 3px solid #E54073;" id="local_audio"
+                           autoplay></audio>
+
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-centered">
+                <div align="center" class="embed-responsive embed-responsive-16by9">
+                    <audio style="border: 3px solid #1C6E8C;" width="560" height="315" id="remote_audio"
+                           autoplay></audio>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div>
+        <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="text-primary" id="createModalLabel">Create a RTC room</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form">
+                            <div class="form-group">
+
+                                <label for="create_roomName" class="text-secondary">Enter room's name</label>
+                                <input class="form-control form-control-lg rounded-0" id="create_roomName"
+                                       name="roomName"
+                                       required
+                                       size="32" type="text" value="">
+                            </div>
+                            <button id="session_btn" type="button" class="btn btn-danger"
+                                    onclick="startSession(document.querySelector('#create_roomName').value)"
+                                    disabled>
+                                Start Session
+                            </button>
+                        </div>
+                    </div>
+                    <div id="create_notifications" class="bg-info"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="createRoomBtn()">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="joinModal" tabindex="-1" role="dialog" aria-labelledby="joinModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="text-primary" id="joinModalLabel">join a RTC room</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form">
+                            <div class="form-group">
+
+                                <label for="join_roomName" class="text-secondary">Enter room's name</label>
+                                <input class="form-control form-control-lg rounded-0" id="join_roomName" name="roomName"
+                                       required
+                                       size="32" type="text" value="">
+                            </div>
+                        </div>
+                        <div id="join_notifications" class="bg-info"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary"
+                                onclick="joinRoomBtn()">Join
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="navbar fixed-bottom navbar-expand-sm navbar-dark bg-dark">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Home Page</a>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul id="createStatus" class="navbar-nav mr-auto" hidden>
+                <li id="idle" class="nav-item active">
+                    <a class="nav-link">Idle</a>
+                </li>
+                <li id="create" class="nav-item">
+                    <a class="nav-link">Room created</a>
+                </li>
+                <li id="start" class="nav-item">
+                    <a class="nav-link">Session started</a>
+                </li>
+                <li id="offer" class="nav-item">
+                    <a class="nav-link">offer send</a>
+                </li>
+                <li id="answer" class="nav-item">
+                    <a class="nav-link">answer received</a>
+                </li>
+                <li id="established" class="nav-item">
+                    <a class="nav-link">connection established</a>
+                </li>
+                <li id="closed" class="nav-item">
+                    <a class="nav-link">connection closed</a>
+                </li>
+            </ul>
+
+            <ul id="joinStatus" class="navbar-nav mr-auto" hidden>
+                <li id="idle2" class="nav-item active">
+                    <a class="nav-link">Idle</a>
+                </li>
+                <li id="join" class="nav-item">
+                    <a class="nav-link">Joined to room</a>
+                </li>
+                <li id="start2" class="nav-item">
+                    <a class="nav-link">Session started</a>
+                </li>
+                <li id="roffer" class="nav-item">
+                    <a class="nav-link">offer received</a>
+                </li>
+                <li id="established2" class="nav-item">
+                    <a class="nav-link">connection established</a>
+                </li>
+                <li id="closed2" class="nav-item">
+                    <a class="nav-link">connection closed</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+</div>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
-<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery-slim.min.js"><\/script>')</script>
-<!-- Optional JavaScript -->
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
@@ -21,11 +204,265 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
         integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
         crossorigin="anonymous"></script>
-
 <script type="text/javascript"
         src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
-
+<script src="{{ url_for('static', filename='js/adapter.js') }}"></script>
 <script>
+    function createRoomBtn() {
+        room_name = document.querySelector('#create_roomName').value;
+        var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
+        sseConnection = new EventSource(stream_url);
+        sseConnection.addEventListener('join', function (event) {
+            var data = JSON.parse(event.data);
+            if (data.username === "{{ user.username }}")
+                notif("create", "you joined", "alert");
+            else {
+                notif("create", data.username + " joined", "alert");
+                document.querySelector('#session_btn').disabled = false;
+                document.querySelector('#createBtn').disabled = true;
+                document.querySelector('#joinBtn').disabled = true;
+            }
+
+        }, null);
+        sseConnection.addEventListener('answer', function (event) {
+            json = JSON.parse(event.data);
+            peerConnection.setRemoteDescription(new RTCSessionDescription(json.data));
+            document.querySelector('#muteBtn').disabled = false;
+            document.querySelector('#endBtn').disabled = false;
+            document.querySelector('#offer').className = 'nav-item';
+            document.querySelector('#answer').className = 'nav-item active';
+        });
+        sseConnection.addEventListener('candidate', function (event) {
+            json = JSON.parse(event.data);
+            peerConnection.addIceCandidate(json.data);
+            document.querySelector('#answer').className = 'nav-item';
+            document.querySelector('#established').className = 'nav-item active';
+            if (timer == null)
+                timer = setInterval(setTime, 1000);
+        });
+        document.querySelector('#create_notifications').innerHTML = '';
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', "{{ url_for('create_room') }}");
+        xhr.onload = function () {
+            if (this.status === 409) {
+                notif("create", 'room already exists. try another one!', "alert");
+            } else if (this.status === 400) {
+                notif("create", 'room name cannot started with _user!', "alert");
+            } else {
+                notif("create", 'room created waiting for another people!', "alert");
+                document.querySelector('#createBtn').disabled = true;
+                document.querySelector('#joinBtn').disabled = true;
+                document.querySelector('#createStatus').hidden = false;
+                document.querySelector('#idle').className = 'nav-item';
+                document.querySelector('#create').className = 'nav-item active';
+            }
+
+        };
+        xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
+    }
+
+    function joinRoomBtn() {
+        console.log('join room called');
+        room_name = document.querySelector('#join_roomName').value;
+        var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
+        sseConnection = new EventSource(stream_url);
+        document.querySelector('#joinStatus').hidden = false;
+        document.querySelector('#idle2').className = 'nav-item';
+        document.querySelector('#join').className = 'nav-item active';
+        sseConnection.addEventListener('join', function (event) {
+            var data = JSON.parse(event.data);
+            if (data.username === "{{ user.username }}") {
+                notif("join", "you joined", "alert");
+            } else {
+                notif("join", data.username + " joined", "alert");
+            }
+            document.querySelector('#join').className = 'nav-item';
+            document.querySelector('#start2').className = 'nav-item active';
+
+        }, null);
+
+        sseConnection.addEventListener('offer', function (event) {
+            json = JSON.parse(event.data);
+            peerConnection.setRemoteDescription(new RTCSessionDescription(json.data));
+            peerConnection.createAnswer().then(function (answer) {
+                peerConnection.setLocalDescription(answer);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '{{ url_for('send_room_signal') }}');
+                xhr.onload = function () {
+                    if (!this.status === 200)
+                        alert('failed to send answer');
+                    else {
+                        $('#joinModal').modal('hide');
+                        document.querySelector('#muteBtn').disabled = false;
+                        document.querySelector('#endBtn').disabled = false;
+                        document.querySelector('#joinStatus').hidden = false;
+                        document.querySelector('#start2').className = 'nav-item';
+                        document.querySelector('#roffer').className = 'nav-item active';
+                        document.querySelector('#join').className = 'nav-item';
+                    }
+                };
+                xhr.send(JSON.stringify({data: answer, room: room_name, type: 'answer'}));
+            });
+        });
+        sseConnection.addEventListener('candidate', function (event) {
+            json = JSON.parse(event.data);
+            peerConnection.addIceCandidate(json.data);
+            document.querySelector('#roffer').className = 'nav-item';
+            document.querySelector('#established2').className = 'nav-item active';
+            if (timer == null) {
+                console.log('timer');
+                timer = setInterval(setTime, 1000);
+            }
+
+        });
+        document.querySelector('#join_notifications').innerHTML = '';
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', "{{ url_for('join_room') }}");
+        xhr.onload = function () {
+            if (this.status === 200) {
+                json = JSON.parse(this.responseText);
+                json.members.forEach(function (entry) {
+                    if (!entry === "{{ user.username }}")
+                        notif("join", entry + " joined", "alert");
+                });
+                notif("join", json.creator + " joined", "alert");
+                document.querySelector('#createBtn').disabled = true;
+                document.querySelector('#joinBtn').disabled = true;
+            } else if (this.status === 404)
+                notif("join", 'room not found', "alert");
+            else
+                notif("join", 'error happened try again', "alert");
+        };
+        xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
+    }
+
+    function startSession(room_name) {
+        notif("create", "session started", "alert");
+        document.querySelector('#create').className = 'nav-item';
+        document.querySelector('#start').className = 'nav-item active';
+        peerConnection.createOffer().then(function (offer) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{ url_for('send_room_signal') }}');
+            xhr.onload = function () {
+                if (!this.status === 200) {
+                    alert('failed to send offer');
+                } else {
+                    $('#createModal').modal('hide');
+                    document.querySelector('#start').className = 'nav-item';
+                    document.querySelector('#offer').className = 'nav-item active';
+                }
+
+            };
+            xhr.send(JSON.stringify({data: offer, room: room_name, type: 'offer'}));
+            peerConnection.setLocalDescription(offer);
+        }, function (error) {
+            alert(error);
+        })
+
+    }
+
+    function notif(type, msg, kind) {
+        var notifications;
+        if (type === "create") {
+            notifications = document.querySelector('#create_notifications');
+        } else {
+            notifications = document.querySelector('#join_notifications');
+        }
+        var para = document.createElement("p");
+        para.appendChild(document.createTextNode(msg));
+        notifications.appendChild(para);
+    }
+
+    function setTime() {
+        ++totalSeconds;
+        secondsLabel.innerHTML = pad(totalSeconds % 60);
+        minutesLabel.innerHTML = pad(parseInt(totalSeconds / 60));
+        hoursLabel.innerHTML = pad(parseInt(totalSeconds / 60) / 60);
+    }
+
+    function pad(val) {
+        var valString = val + "";
+        if (valString.length < 2) {
+            return "0" + valString;
+        } else {
+            return valString;
+        }
+    }
+
+    function muteBtn() {
+
+    }
+
+    function endBtn() {
+        clearInterval(timer);
+        console.log('end');
+        peerConnection.close();
+        document.querySelector('#idel2').className = 'nav-item active';
+        document.querySelector('#idel').className = 'nav-item active';
+        document.querySelector('#established2').className = 'nav-item';
+        document.querySelector('#established').className = 'nav-item';
+        document.querySelector('#closed2').className = 'nav-item';
+        document.querySelector('#closed').className = 'nav-item';
+        document.querySelector('#joinStatus').hidden = true;
+        document.querySelector('#createStatus').hidden = true;
+        document.querySelector('#createBtn').disabled = false;
+        document.querySelector('#joinBtn').disabled = false;
+        document.querySelector('#muteBtn').disabled = true;
+        document.querySelector('#endBtn').disabled = true;
+    }
+
+    var peerConnection = new RTCPeerConnection();
+    var stream;
+    var remote_video = document.querySelector('#remote_audio');
+    var sseConnection;
+    var room_name;
+    var minutesLabel = document.getElementById("minutes");
+    var secondsLabel = document.getElementById("seconds");
+    var hoursLabel = document.getElementById("hours");
+    var totalSeconds = 0;
+    var timer;
+
+    navigator.getUserMedia({audio: true}, function (navStream) {
+        console.log('nav');
+        stream = navStream;
+        var local_video = document.querySelector('#local_audio');
+        local_video.srcObject = stream;
+
+        peerConnection.addStream(stream);
+    }, function (err) {
+        alert(err);
+    });
+
+    peerConnection.onicecandidate = function (event) {
+        if (event.candidate) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{ url_for('send_room_signal') }}');
+            xhr.onload = function () {
+                if (!this.status === 200) {
+                    alert('failed to send offer');
+                }
+            };
+            xhr.send(JSON.stringify({data: event.candidate, room: room_name, type: 'candidate'}));
+        }
+    };
+
+    peerConnection.onaddstream = function (event) {
+        remote_video.srcObject = event.stream;
+    };
+
+    peerConnection.onclose = function (event) {
+        clearInterval(timer);
+        alert('peer ended the call');
+        peerConnection.close();
+
+    };
+
+    peerConnection.oniceconnectionstatechange = function () {
+        if (peerConnection.iceConnectionState === 'disconnected') {
+            endBtn();
+            alert('the peer ended the call');
+        }
+    }
 
 </script>
 
