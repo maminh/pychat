@@ -139,6 +139,8 @@
         });
         sseConnection.addEventListener('candidate', function (event) {
             json = JSON.parse(event.data);
+            console.log(typeof json.data);
+            console.log(json.data);
             console.log('ice sse');
             peerConnection.addIceCandidate(json.data);
         });
@@ -199,6 +201,8 @@
         sseConnection.addEventListener('candidate', function (event) {
             json = JSON.parse(event.data);
             console.log('ice sse join');
+            console.log(typeof json.data);
+            console.log(json.data);
             peerConnection.addIceCandidate(json.data);
         });
         document.querySelector('#join_notifications').innerHTML = '';
@@ -342,7 +346,7 @@
 
     peerConnection.ontrack = function (event) {
         console.log('on DDD ontrack');
-        remote_video.srcObject = event.stream;
+        remote_video.srcObject = event.stream[0];
     };
 
     peerConnection.iceConnectionState = function (event) {
