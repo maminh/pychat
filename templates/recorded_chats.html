@@ -54,25 +54,64 @@
                 float: right;
             }
         }
+
+
+        ul {
+          list-style-type: none;
+          margin: 10px auto;
+          width :  40%;
+          margin
+          padding: 0;
+        }
+
+        li {
+          font: 200 20px/1.5 Helvetica, Verdana, sans-serif;
+          border-bottom: 1px solid #EEE;
+          width : col-8
+        }
+
+        li:last-child {
+          border: none;
+        }
+
+        li a, li div {
+          text-decoration: none;
+          color: #EEE;
+          display: block;
+          width: col-3;
+
+          -webkit-transition: font-size 0.3s ease, background-color 0.3s ease;
+          -moz-transition: font-size 0.3s ease, background-color 0.3s ease;
+          -o-transition: font-size 0.3s ease, background-color 0.3s ease;
+          -ms-transition: font-size 0.3s ease, background-color 0.3s ease;
+          transition: font-size 0.3s ease, background-color 0.3s ease;
+        }
+
+        li a:hover,li div a:hover{
+          font-size: 30px;
+          <!--background: #f6f6f6;-->
+        }
     </style>
 </head>
 
 <body class="text-center">
 
-    <div    class="over-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    <div    class="row over-container d-flex w-100 h-100 p-3 mx-auto flex-column">
     {% if videos %}
         <p>Your videos</p>
-        {% for video in videos %}
-            <li>
-                <div>
-                    <div> video</div>
-                    <div>{{ video.peer1.username}}</div>
-                    <div>{{ video.peer2.username}}</div>
-                    <div>{{video.fileAddress}}</div>
-                    <div><a href="{{ url_for('get_chat_video',filename=video.fileAddress) }}">Download</a> </div>
+        <ul >
+            {% for video in videos %}
+            <li >
+                <div class="row ">
+                    <!--<div> video</div>-->
+                    <!--<div class="col">{{ video.peer1.username}}</div>-->
+                    <div class="col">{{ video.peer2.username}}</div>
+                    <!--<div >{{video.fileAddress}}</div>-->
+                    <div class="col"><a href="{{ url_for('get_chat_video',filename=video.fileAddress) }}">Download</a> </div>
                 </div>
             </li>
         {% endfor %}
+        </ul>
 
     {% endif %}
 

@@ -232,3 +232,5 @@ dmypy.json
 
 local_params.py
 videos
+uploads/*
+uploads
