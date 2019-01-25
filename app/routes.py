@@ -8,7 +8,7 @@ from peewee import DoesNotExist
 
 from app import App, ALLOWED_EXTENSIONS, UPLOAD_FOLDER
 from app.forms import LoginForm, RegistrationForm, StreamForm
-from app.models import User, StreamModel
+from app.models import User, StreamModel, ChatVideos
 
 from utils import random_name
 from celery_tasks import  merge_streams
@@ -112,6 +112,7 @@ def upload():
 
     form = StreamForm()
     if request.method == 'GET':
+        videos = ChatVideos.select().where((ChatVideos.peer1==current_user.id)|(ChatVideos.peer2==current_user.id))
         return  render_template('videochat.html')
     elif request.method == 'POST':
         if form.validate_on_submit():
@@ -137,7 +138,7 @@ def upload():
                 print(form.fin.data)
                 if  form.fin.data:
                     print('merging streams')
-                    if StreamModel.get(peerID = form.streamID.data, streamID = current_user, fin = True):
+                    if StreamModel.get_or_none(peer2ID = form.streamID.data, streamID = current_user.id, fin = True):
                         merge_streams.delay(peer1ID= current_user.id, peer2ID=form.chatID.data)
                 return Response('ok',status=200)
         print(form.errors)
