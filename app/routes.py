@@ -121,11 +121,6 @@ def upload():
                 name = random_name()+'.mp4'
                 file.save(os.path.join(UPLOAD_FOLDER + '/streams' , name))
                 streamModel = StreamModel()
-                # print current_user.id
-                # print current_user.username
-                # print form.chatID.data
-                # print User.get_by_id(form.chatID.data).username
-
                 streamModel.peer1ID = current_user.id
                 streamModel.peer2ID =form.chatID.data
                 streamModel.streamID = form.streamID.data
@@ -142,8 +137,8 @@ def upload():
                 print(form.fin.data)
                 if  form.fin.data:
                     print('merging streams')
-                    # if StreamModel.get(peerID = form.streamID.data, streamID = current_user, fin = True):
-                    merge_streams(peer1ID= current_user, peer2ID=form.streamID.data)
+                    if StreamModel.get(peerID = form.streamID.data, streamID = current_user, fin = True):
+                        merge_streams.delay(peer1ID= current_user.id, peer2ID=form.chatID.data)
                 return Response('ok',status=200)
         print(form.errors)
         return Response('Bad request',400)

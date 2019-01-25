@@ -40,10 +40,10 @@ class StreamModel(Model):
     """
     peer1ID = db.ForeignKeyField(model=User)
     peer2ID = db.ForeignKeyField(model=User)
-    streamName = db.TextField(unique=True)
+    streamName = db.CharField(unique=True)
     # last stream id which peer 1 has sent
     streamID = db.IntegerField()
-    fin = db.BooleanField()
+    fin = db.BooleanField(default=False)
 
 
 class ChatVideos(Model):
@@ -52,5 +52,5 @@ class ChatVideos(Model):
     """
     peer1 = db.ForeignKeyField(model=User)
     peer2 = db.ForeignKeyField(model=User)
-    fileAddress = db.TextField()
+    fileAddress = db.CharField()
     chatDate = db.DateTimeField()
