@@ -28,7 +28,7 @@
                         <div class="card-body">
 
                             <form class="form" role="form" autocomplete="off" id="formLogin" novalidate=""
-                                  method="POST">
+                                  method="POST" enctype="multipart/form-data">
                                 {{ form.hidden_tag() }}
                                 <div class="form-group">
                                     {{ form.username.label }}
@@ -36,6 +36,15 @@
                                 </div>
 
                                 {% for error in form.username.errors %}
+                                    <div class="alert alert-danger" role="alert">[{{ error }}]</div>
+                                {% endfor %}
+
+                                <div class="form-group">
+                                    {{ form.photo.label }}
+                                    {{ form.photo(class="form-control-file") }}
+                                </div>
+
+                                {% for error in form.photo.errors %}
                                     <div class="alert alert-danger" role="alert">[{{ error }}]</div>
                                 {% endfor %}
 

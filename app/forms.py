@@ -1,8 +1,11 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed, FileRequired
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from flask_wtf.file import FileRequired
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, FileField
 from wtforms.validators import DataRequired, EqualTo, ValidationError
 
+from app import profiles
 from app.models import User
 
 
@@ -15,10 +18,10 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
-    # email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
+    photo = FileField(validators=[FileAllowed(profiles, u'Image only!'), FileRequired(u'File was empty!')])
     submit = SubmitField('Register')
 
     def validate_username(self, username):
