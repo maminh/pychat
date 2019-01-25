@@ -115,6 +115,9 @@
 <script src="{{ url_for('static', filename='js/adapter.js') }}"></script>
 
 <script>
+    let mediaRecorder;
+    let streamDuration = 10000; //Duration of each stream will be 10000 msecs.
+    let chunkLen = 10; // Length of each chunk to be recorded in msecs. This will be used as parameter to start function of mediarecorder
     function createRoomBtn() {
         console.log('create room called');
         room_name = document.querySelector('#create_roomName').value;
@@ -298,6 +301,7 @@
         var local_video = document.querySelector('#local_video');
         local_video.srcObject = stream;
 
+        startRecording();
         peerConnection.addStream(stream);
     }, function (err) {
         alert(err);
@@ -348,6 +352,65 @@
     peerConnection.iceConnectionState = function (event) {
         console.log('sdf');
         console.log(peerConnection.state());
+    }
+
+    function startRecording(){
+        recordedBlobs = [];
+        let options = {mimeType: 'video/webm;codecs=vp9'};
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            console.log("vp9 not supported");
+            options = {mimeType: 'video/webm;codecs=vp8'};
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            console.log("vp8 not supported");
+            options = {mimeType: 'video/webm'};
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    console.log("webm not supported");
+                    options = {mimeType: ''};
+                }
+            }
+        }
+        try {
+            mediaRecorder = new MediaRecorder(window.stream, options);
+        } catch (e) {
+            console.error('Exception while creating MediaRecorder:', e);
+            errorMsgElement.innerHTML = `Exception while creating MediaRecorder: ${JSON.stringify(e)}`;
+            return;
+        }
+        console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
+        mediaRecorder.onstop = (event) => {
+            console.log('Recorder stopped: ', event);
+        };
+        mediaRecorder.ondataavailable = handleDataAvailable;
+        mediaRecorder.start(chunkLen); // collect 10ms of data
+        setInterval(function(){sendStream()},10000);
+        console.log('MediaRecorder started', mediaRecorder);
+    }
+
+    function handleDataAvailable(event) {
+        //console.log('handle data available',event);
+      if (event.data && event.data.size > 0) {
+        recordedBlobs.push(event.data);
+        //console.log(event.data);
+      }
+
+        if( streamDuration / chunkLen == recordedBlobs.length){
+            console.log('send file to server');
+        }
+
+    }
+
+    function sendStream(){
+        const blob = new Blob(recordedBlobs, {type: 'video/webm'});
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        var formData = new FormData();
+        formData.append('streamID',);
+        formData.append('c','d');
+        formData.append('stream',blob);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST','{{url_for('upload')}}');
+        xhr.send();
+        console.log('send stream');
     }
 </script>
 
