@@ -16,21 +16,22 @@ def merge_streams(peer1ID, peer2ID):
         .where((StreamModel.peer1ID == peer1ID) & (StreamModel.peer2ID == peer2ID))
     peer2Videos = StreamModel.select().where((StreamModel.peer1ID == peer2ID) & (StreamModel.peer2ID == peer1ID)) \
         .order_by(StreamModel.streamID)
-    finalClipName = os.path.join(UPLOAD_FOLDER + '/chats', random_name() + '.mp4')
+    finalClipName =  random_name() + '.mp4'
     finalClip = None
     for n1, n2 in zip(peer1Videos, peer2Videos):
         v1 = VideoFileClip(os.path.join(UPLOAD_FOLDER + '/streams', n1.streamName))
         v2 = VideoFileClip(os.path.join(UPLOAD_FOLDER + '/streams', n2.streamName))
         finalClip = concatenate([clips_array([[v1, v2]])])
-    finalClip.write_videofile(finalClipName)
+    finalClip.write_videofile(os.path.join(UPLOAD_FOLDER + '/chats',finalClipName))
     chatVideo = ChatVideos()
     chatVideo.peer1 = peer1ID
     chatVideo.peer2 = peer2ID
+    print(finalClipName)
     chatVideo.fileAddress = finalClipName
     chatVideo.chatDate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
     chatVideo.save()
     for v in peer1Videos :
-        os.remove(os.path.join(UPLOAD_FOLDER + '/chats', v.streamName))
+        os.remove(os.path.join(UPLOAD_FOLDER + '/streams', v.streamName))
         v.delete_instance()
     print("finished")
     pass

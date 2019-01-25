@@ -1,7 +1,7 @@
 import os
 from json import loads
 
-from flask import render_template, redirect, url_for, flash, request, Response
+from flask import render_template, redirect, url_for, flash, request, Response, send_from_directory, send_file
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_sse import sse
 from peewee import DoesNotExist
@@ -112,8 +112,8 @@ def upload():
 
     form = StreamForm()
     if request.method == 'GET':
-        videos = ChatVideos.select().where((ChatVideos.peer1==current_user.id)|(ChatVideos.peer2==current_user.id))
-        return  render_template('videochat.html')
+        videos = ChatVideos.select().where((ChatVideos.peer1 == current_user.id) | (ChatVideos.peer2 == current_user.id))
+        return  render_template('recorded_chats.html', videos= videos)
     elif request.method == 'POST':
         if form.validate_on_submit():
             file = request.files['file']
@@ -144,4 +144,9 @@ def upload():
         print(form.errors)
         return Response('Bad request',400)
 
+@App.route('/download/<filename>')
+@login_required
+def get_chat_video(filename):
 
+    print('file name is : {0}'.format(filename))
+    return send_file(UPLOAD_FOLDER + '/chats', attachment_filename=filename, as_attachment=True)
