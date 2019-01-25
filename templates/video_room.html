@@ -22,6 +22,10 @@
         join a RTC room
     </button>
 
+    <button onclick="send()" type="button" class="btn btn-alert">send</button>
+    <button onclick="openData()" type="button" class="btn btn-alert">open</button>
+
+
     <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel"
          aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -111,17 +115,6 @@
 <script src="{{ url_for('static', filename='js/adapter.js') }}"></script>
 
 <script>
-    function findGetParameter(parameterName) {
-        var result = null,
-            tmp = [];
-        var items = location.search.substr(1).split("&");
-        for (var index = 0; index < items.length; index++) {
-            tmp = items[index].split("=");
-            if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
-        }
-        return result;
-    }
-
     function createRoomBtn() {
         console.log('create room called');
         room_name = document.querySelector('#create_roomName').value;
@@ -142,12 +135,12 @@
             json = JSON.parse(event.data);
             console.log('answer');
             console.log(json);
-            peerConnection.setRemoteDescription(json.data);
+            peerConnection.setRemoteDescription(new RTCSessionDescription(json.data));
         });
         sseConnection.addEventListener('candidate', function (event) {
             json = JSON.parse(event.data);
             console.log('ice sse');
-            peerConnection.addIceCandidate(new RTCIceCandidate(json.data));
+            peerConnection.addIceCandidate(json.data);
         });
         document.querySelector('#create_notifications').innerHTML = '';
         var xhr = new XMLHttpRequest();
@@ -187,8 +180,9 @@
             json = JSON.parse(event.data);
             console.log('offer');
             console.log(json);
-            peerConnection.setRemoteDescription(json.data);
+            peerConnection.setRemoteDescription(new RTCSessionDescription(json.data));
             peerConnection.createAnswer().then(function (answer) {
+                peerConnection.setLocalDescription(answer);
                 console.log('answer');
                 console.log(answer);
 
@@ -205,7 +199,7 @@
         sseConnection.addEventListener('candidate', function (event) {
             json = JSON.parse(event.data);
             console.log('ice sse join');
-            peerConnection.addIceCandidate(new RTCIceCandidate(json.data));
+            peerConnection.addIceCandidate(json.data);
         });
         document.querySelector('#join_notifications').innerHTML = '';
         var xhr = new XMLHttpRequest();
@@ -257,29 +251,67 @@
         notifications.appendChild(para);
     }
 
-    function close() {
-        console.log('close');
-        document.querySelector('#create_notifications').innerHTML = '';
-        document.querySelector('#join_notifications').innerHTML = '';
-        if (sseConnection)
-            sseConnection.close();
+    function openData() {
+        console.log('ghopen');
+        var dataChannelOptions = {
+            reliable: true
+        };
+        dataChannel = peerConnection.createDataChannel('textDataChannel', dataChannelOptions);
+        dataChannel.onerror = function (error) {
+            console.log("Error:", error);
+        };
+
+        dataChannel.onmessage = function (event) {
+            console.log("Got message:", event.data);
+        };
+
+        dataChannel.onopen = function (event) {
+            console.log('open');
+        };
+        dataChannel.onstatechange
+    }
+
+    function send() {
+        console.log('send');
+        dataChannel.send('hi');
     }
 
     var peerConnection = new RTCPeerConnection();
+    console.log('currebt state ' + peerConnection.iceGatheringState);
     var stream;
     var remote_video = document.querySelector('#remote_video');
     var sseConnection;
     var room_name;
+    var dataChannel;
 
-    $('#joinModal').on('hidden.bs.modal', function () {
-        close();
+    {#$('#joinModal').on('hidden.bs.modal', function () {#}
+    {#    close();#}
+    {# });#}
+    {##}
+    {#$('#createModal').on('hidden.bs.modal', function () {#}
+    {#    close();#}
+    {# });#}
+
+    navigator.getUserMedia({video: true, audio: true}, function (navStream) {
+        console.log('nav');
+        stream = navStream;
+        var local_video = document.querySelector('#local_video');
+        local_video.srcObject = stream;
+
+        peerConnection.addStream(stream);
+    }, function (err) {
+        alert(err);
     });
 
-    $('#createModal').on('hidden.bs.modal', function () {
-        close();
-    });
     console.log('register');
+
+    peerConnection.oniceconnectionstatechange = function (event) {
+        console.log('change connection state ' + event.target.iceConnectionState);
+    };
+
     peerConnection.onicecandidate = function (event) {
+        console.log('state' + event.target.iceGatheringState);
+        console.log(peerConnection.iceGatheringState);
         if (event.candidate) {
             console.log('ice 2');
             console.log(event.candidate);
@@ -313,28 +345,10 @@
         remote_video.srcObject = event.stream;
     };
 
-
-    navigator.getUserMedia({video: true, audio: true}, function (navStream) {
-        console.log('nav');
-        stream = navStream;
-        var local_video = document.querySelector('#local_video');
-        local_video.srcObject = stream;
-
-        peerConnection.addStream(stream);
-        peerConnection.ondatachannel = function (event) {
-            console.log('event');
-            var receiveChannel = event.channel;
-            receiveChannel.onmessage = function (event) {
-                console.log("ondatachannel message:", event.data);
-            };
-
-        };
-        if (findGetParameter('creator')) {
-            console.log('creator');
-        }
-    }, function (err) {
-        alert(err);
-    });
+    peerConnection.iceConnectionState = function (event) {
+        console.log('sdf');
+        console.log(peerConnection.state());
+    }
 </script>
 
 </body>
