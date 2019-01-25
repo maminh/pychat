@@ -139,6 +139,9 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="createRoomBtn()">Create</button>
+                <video id="local_video" autoplay></video>
+
+                <video id="remote_video" autoplay></video>
             </div>
         </div>
     </div>
@@ -213,6 +216,7 @@
         console.log('create room called');
         var room_name = document.querySelector('#create_roomName').value;
         var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
+        console.log(stream_url);
         sse_connection = new EventSource(stream_url);
         sse_connection.addEventListener('join', function (event) {
             var data = JSON.parse(event.data);
@@ -224,7 +228,19 @@
             }
 
         }, null);
-        createRoom(room_name);
+        document.querySelector('#create_notifications').innerHTML = '';
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', "{{ url_for('create_room') }}");
+        xhr.onload = function () {
+            if (this.status === 200) {
+                console.log('join announcement send');
+            } else if (this.status === 409) {
+                notif("create", 'room already exists. try another one!', "alert");
+            } else if (this.status === 400) {
+                notif("create", 'room name cannot started with _user!', "alert");
+            }
+        };
+        xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
     }
 
     function joinRoomBtn() {
@@ -244,14 +260,10 @@
         sse_connection.addEventListener('session', function (event) {
             json = JSON.parse(event.data);
             if (json.data === "video_room")
-                window.open("{{ url_for('video_room') }}", '_self', false);
+                window.open("{{ url_for('video_room') }}" + "?room=" + room_name, '_self', false);
             else
-                window.open("{{ url_for('voice_room') }}", '_self', false);
+                window.open("{{ url_for('voice_room') }}" + "?room=" + room_name, '_self', false);
         }, null);
-        joinRoom(room_name);
-    }
-
-    function joinRoom(room_name) {
         document.querySelector('#join_notifications').innerHTML = '';
         var xhr = new XMLHttpRequest();
         xhr.open('POST', "{{ url_for('join_room') }}");
@@ -271,20 +283,6 @@
         xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
     }
 
-    function createRoom(room_name) {
-        document.querySelector('#create_notifications').innerHTML = '';
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', "{{ url_for('create_room') }}");
-        xhr.onload = function () {
-            if (this.status === 200) {
-                console.log('join announcement send');
-            } else if (this.status === 409) {
-                notif("create", 'room already exists. try another one!', "alert");
-            }
-        };
-        xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
-    }
-
     function startSession(room_name) {
         console.log('session started');
         notif("create", "session started", "alert");
@@ -299,9 +297,9 @@
             if (!this.status === 200) {
                 notif("create", 'failed to start session, try again!', "alert");
             } else if (room_type === 'video_room')
-                window.open("{{ url_for('video_room') }}", '_self', false);
+                window.open("{{ url_for('video_room', creator=true) }}" + "&room=" + room_name, '_self', false);
             else
-                window.open("{{ url_for('voice_room') }}", '_self', false);
+                window.open("{{ url_for('voice_room', creator=true) }}" + "&room=" + room_name, '_self', false);
         };
         xhr.send(JSON.stringify({data: room_type, type: "session", room: room_name}))
 

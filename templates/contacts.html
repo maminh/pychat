@@ -313,7 +313,7 @@
     }
 
     $(document).ready(function () {
-        var url = 'http://' + document.domain + ':' + location.port + '/chat';
+        var url = 'https://' + document.domain + ':' + location.port + '/chat';
         socket = io.connect(url);
         document.querySelector('#page_subtitle').innerHTML = 'online';
         socket.on('message', function (msg) {

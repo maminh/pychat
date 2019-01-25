@@ -20,4 +20,4 @@ if not os.path.exists(os.path.join('media', 'profiles')):
     os.mkdir(os.path.join('media', 'profiles'))
 
 if __name__ == '__main__':
-    socket_io.run(App, host=HOST, debug=DEBUG_MODE)
+    socket_io.run(App, host=HOST, debug=DEBUG_MODE, keyfile='key.pem', certfile='cert.pem')
