@@ -6,100 +6,196 @@
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/button.css') }}">
+
+    <style>
+        body {
+            height: 100%;
+            background-color: #FBFCFF;
+
+        }
+
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
 </head>
-<body>
-<div>
-    <p>local</p>
-    <p>remote</p>
-    <video id="local_video" autoplay></video>
+<body class="text-center">
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    <header class="masthead mb-auto">
+        <div class="inner">
+            <h3 class="masthead-brand">Video room</h3>
+            <nav class="nav nav-masthead justify-content-center">
+                <button id="createBtn" class="btn blue" data-toggle="modal" data-target="#createModal">
+                    Create room
+                </button>
+                <button id="joinBtn" class="btn green" data-toggle="modal" data-target="#joinModal">
+                    join room
+                </button>
+                <button id="endBtn" class="btn red" onclick="endBtn()" disabled>
+                    End Call
+                </button>
+                <button id="muteBtn" class="btn orange" onclick="muteBtn()" disabled>
+                    Mute
+                </button>
+            </nav>
+        </div>
+    </header>
 
-    <video id="remote_video" autoplay></video>
-
-    <button class="btn btn-lg btn-primary" data-toggle="modal" data-target="#createModal">
-        Create a RTC room
-    </button>
-    <button class="btn btn-lg btn-secondary" data-toggle="modal" data-target="#joinModal">
-        join a RTC room
-    </button>
-
-    <button onclick="send()" type="button" class="btn btn-alert">send</button>
-    <button onclick="openData()" type="button" class="btn btn-alert">open</button>
-
-
-    <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="text-primary" id="createModalLabel">Create a RTC room</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+    <main role="main" class="inner cover">
+        <h1 id="timer" class="cover-heading"><label id="hours">00</label>:<label id="minutes">00</label>:<label
+                id="seconds">00</label></h1>
+        <div class="row">
+            <div class="col-sm-6 col-centered">
+                <div align="center" class="embed-responsive embed-responsive-16by9">
+                    <video style="border: 3px solid #E54073;" width="560" height="315" id="local_video"
+                           autoplay></video>
                 </div>
-                <div class="modal-body">
-                    <div class="form">
-                        <div class="form-group">
+                <p>local</p>
+            </div>
 
-                            <label for="create_roomName" class="text-secondary">Enter room's name</label>
-                            <input class="form-control form-control-lg rounded-0" id="create_roomName" name="roomName"
-                                   required
-                                   size="32" type="text" value="">
+            <div class="col-sm-6 col-centered">
+                <div align="center" class="embed-responsive embed-responsive-16by9">
+                    <video style="border: 3px solid #1C6E8C;" width="560" height="315" id="remote_video"
+                           autoplay></video>
+                </div>
+                <p>remote</p>
+            </div>
+        </div>
+
+    </main>
+
+    <div>
+        <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="text-primary" id="createModalLabel">Create a RTC room</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form">
+                            <div class="form-group">
+
+                                <label for="create_roomName" class="text-secondary">Enter room's name</label>
+                                <input class="form-control form-control-lg rounded-0" id="create_roomName"
+                                       name="roomName"
+                                       required
+                                       size="32" type="text" value="">
+                            </div>
+                            <button id="session_btn" type="button" class="btn btn-danger"
+                                    onclick="startSession(document.querySelector('#create_roomName').value)"
+                                    disabled>
+                                Start Session
+                            </button>
                         </div>
-                        <button id="session_btn" type="button" class="btn btn-danger"
-                                onclick="startSession(document.querySelector('#create_roomName').value)"
-                                disabled>
-                            Start Session
+                    </div>
+                    <div id="create_notifications" class="bg-info"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="createRoomBtn()">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="joinModal" tabindex="-1" role="dialog" aria-labelledby="joinModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="text-primary" id="joinModalLabel">join a RTC room</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form">
+                            <div class="form-group">
+
+                                <label for="join_roomName" class="text-secondary">Enter room's name</label>
+                                <input class="form-control form-control-lg rounded-0" id="join_roomName" name="roomName"
+                                       required
+                                       size="32" type="text" value="">
+                            </div>
+                        </div>
+                        <div id="join_notifications" class="bg-info"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary"
+                                onclick="joinRoomBtn()">Join
                         </button>
                     </div>
                 </div>
-                <div id="create_notifications" class="bg-info"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="createRoomBtn()">Create</button>
-                </div>
             </div>
         </div>
     </div>
 
+    <nav class="navbar fixed-bottom navbar-expand-sm navbar-dark bg-dark">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Home Page</a>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul id="createStatus" class="navbar-nav mr-auto" hidden>
+                <li id="idle" class="nav-item active">
+                    <a class="nav-link">Idle</a>
+                </li>
+                <li id="create" class="nav-item">
+                    <a class="nav-link">Room created</a>
+                </li>
+                <li id="start" class="nav-item">
+                    <a class="nav-link">Session started</a>
+                </li>
+                <li id="offer" class="nav-item">
+                    <a class="nav-link">offer send</a>
+                </li>
+                <li id="answer" class="nav-item">
+                    <a class="nav-link">answer received</a>
+                </li>
+                <li id="established" class="nav-item">
+                    <a class="nav-link">connection established</a>
+                </li>
+                <li id="closed" class="nav-item">
+                    <a class="nav-link">connection closed</a>
+                </li>
+            </ul>
 
-    <div class="modal fade" id="joinModal" tabindex="-1" role="dialog" aria-labelledby="joinModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="text-primary" id="joinModalLabel">join a RTC room</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form">
-                        <div class="form-group">
-
-                            <label for="join_roomName" class="text-secondary">Enter room's name</label>
-                            <input class="form-control form-control-lg rounded-0" id="join_roomName" name="roomName"
-                                   required
-                                   size="32" type="text" value="">
-                        </div>
-                    </div>
-                    <div id="join_notifications" class="bg-info"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary"
-                            onclick="joinRoomBtn()">Join
-                    </button>
-                </div>
-            </div>
+            <ul id="joinStatus" class="navbar-nav mr-auto" hidden>
+                <li id="idle2" class="nav-item active">
+                    <a class="nav-link">Idle</a>
+                </li>
+                <li id="join" class="nav-item">
+                    <a class="nav-link">Joined to room</a>
+                </li>
+                <li id="start2" class="nav-item">
+                    <a class="nav-link">Session started</a>
+                </li>
+                <li id="roffer" class="nav-item">
+                    <a class="nav-link">offer received</a>
+                </li>
+                <li id="established2" class="nav-item">
+                    <a class="nav-link">connection established</a>
+                </li>
+                <li id="closed2" class="nav-item">
+                    <a class="nav-link">connection closed</a>
+                </li>
+            </ul>
         </div>
-    </div>
+    </nav>
+
 </div>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
-
-<!-- Optional JavaScript -->
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
@@ -109,17 +205,13 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
         integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
         crossorigin="anonymous"></script>
-
 <script type="text/javascript"
         src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='js/adapter.js') }}"></script>
-
 <script>
     function createRoomBtn() {
-        console.log('create room called');
         room_name = document.querySelector('#create_roomName').value;
         var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
-        console.log(stream_url);
         sseConnection = new EventSource(stream_url);
         sseConnection.addEventListener('join', function (event) {
             var data = JSON.parse(event.data);
@@ -128,33 +220,44 @@
             else {
                 notif("create", data.username + " joined", "alert");
                 document.querySelector('#session_btn').disabled = false;
+                document.querySelector('#createBtn').disabled = true;
+                document.querySelector('#joinBtn').disabled = true;
             }
 
         }, null);
         sseConnection.addEventListener('answer', function (event) {
             json = JSON.parse(event.data);
-            console.log('answer');
-            console.log(json);
             peerConnection.setRemoteDescription(new RTCSessionDescription(json.data));
+            document.querySelector('#muteBtn').disabled = false;
+            document.querySelector('#endBtn').disabled = false;
+            document.querySelector('#offer').className = 'nav-item';
+            document.querySelector('#answer').className = 'nav-item active';
         });
         sseConnection.addEventListener('candidate', function (event) {
             json = JSON.parse(event.data);
-            console.log(typeof json.data);
-            console.log(json.data);
-            console.log('ice sse');
             peerConnection.addIceCandidate(json.data);
+            document.querySelector('#answer').className = 'nav-item';
+            document.querySelector('#established').className = 'nav-item active';
+            if (timer == null)
+                timer = setInterval(setTime, 1000);
         });
         document.querySelector('#create_notifications').innerHTML = '';
         var xhr = new XMLHttpRequest();
         xhr.open('POST', "{{ url_for('create_room') }}");
         xhr.onload = function () {
-            if (this.status === 200) {
-                console.log('join announcement send');
-            } else if (this.status === 409) {
+            if (this.status === 409) {
                 notif("create", 'room already exists. try another one!', "alert");
             } else if (this.status === 400) {
                 notif("create", 'room name cannot started with _user!', "alert");
+            } else {
+                notif("create", 'room created waiting for another people!', "alert");
+                document.querySelector('#createBtn').disabled = true;
+                document.querySelector('#joinBtn').disabled = true;
+                document.querySelector('#createStatus').hidden = false;
+                document.querySelector('#idle').className = 'nav-item';
+                document.querySelector('#create').className = 'nav-item active';
             }
+
         };
         xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
     }
@@ -164,46 +267,54 @@
         room_name = document.querySelector('#join_roomName').value;
         var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
         sseConnection = new EventSource(stream_url);
+        document.querySelector('#joinStatus').hidden = false;
+        document.querySelector('#idle2').className = 'nav-item';
+        document.querySelector('#join').className = 'nav-item active';
         sseConnection.addEventListener('join', function (event) {
             var data = JSON.parse(event.data);
-            if (data.username === "{{ user.username }}")
+            if (data.username === "{{ user.username }}") {
                 notif("join", "you joined", "alert");
-            else
+            } else {
                 notif("join", data.username + " joined", "alert");
+            }
+            document.querySelector('#join').className = 'nav-item';
+            document.querySelector('#start2').className = 'nav-item active';
 
         }, null);
 
-        sseConnection.addEventListener('session', function (event) {
-            json = JSON.parse(event.data);
-            console.log(json);
-            notif("join", 'session started', "alert");
-        }, null);
         sseConnection.addEventListener('offer', function (event) {
             json = JSON.parse(event.data);
-            console.log('offer');
-            console.log(json);
             peerConnection.setRemoteDescription(new RTCSessionDescription(json.data));
             peerConnection.createAnswer().then(function (answer) {
                 peerConnection.setLocalDescription(answer);
-                console.log('answer');
-                console.log(answer);
-
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', '{{ url_for('send_room_signal') }}');
                 xhr.onload = function () {
                     if (!this.status === 200)
                         alert('failed to send answer');
+                    else {
+                        $('#joinModal').modal('hide');
+                        document.querySelector('#muteBtn').disabled = false;
+                        document.querySelector('#endBtn').disabled = false;
+                        document.querySelector('#joinStatus').hidden = false;
+                        document.querySelector('#start2').className = 'nav-item';
+                        document.querySelector('#roffer').className = 'nav-item active';
+                        document.querySelector('#join').className = 'nav-item';
+                    }
                 };
                 xhr.send(JSON.stringify({data: answer, room: room_name, type: 'answer'}));
-            })
-
+            });
         });
         sseConnection.addEventListener('candidate', function (event) {
             json = JSON.parse(event.data);
-            console.log('ice sse join');
-            console.log(typeof json.data);
-            console.log(json.data);
             peerConnection.addIceCandidate(json.data);
+            document.querySelector('#roffer').className = 'nav-item';
+            document.querySelector('#established2').className = 'nav-item active';
+            if (timer == null) {
+                console.log('timer');
+                timer = setInterval(setTime, 1000);
+            }
+
         });
         document.querySelector('#join_notifications').innerHTML = '';
         var xhr = new XMLHttpRequest();
@@ -216,6 +327,8 @@
                         notif("join", entry + " joined", "alert");
                 });
                 notif("join", json.creator + " joined", "alert");
+                document.querySelector('#createBtn').disabled = true;
+                document.querySelector('#joinBtn').disabled = true;
             } else if (this.status === 404)
                 notif("join", 'room not found', "alert");
             else
@@ -225,15 +338,21 @@
     }
 
     function startSession(room_name) {
-        console.log('session started');
         notif("create", "session started", "alert");
+        document.querySelector('#create').className = 'nav-item';
+        document.querySelector('#start').className = 'nav-item active';
         peerConnection.createOffer().then(function (offer) {
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '{{ url_for('send_room_signal') }}');
             xhr.onload = function () {
                 if (!this.status === 200) {
                     alert('failed to send offer');
+                } else {
+                    $('#createModal').modal('hide');
+                    document.querySelector('#start').className = 'nav-item';
+                    document.querySelector('#offer').className = 'nav-item active';
                 }
+
             };
             xhr.send(JSON.stringify({data: offer, room: room_name, type: 'offer'}));
             peerConnection.setLocalDescription(offer);
@@ -255,46 +374,54 @@
         notifications.appendChild(para);
     }
 
-    function openData() {
-        console.log('ghopen');
-        var dataChannelOptions = {
-            reliable: true
-        };
-        dataChannel = peerConnection.createDataChannel('textDataChannel', dataChannelOptions);
-        dataChannel.onerror = function (error) {
-            console.log("Error:", error);
-        };
-
-        dataChannel.onmessage = function (event) {
-            console.log("Got message:", event.data);
-        };
-
-        dataChannel.onopen = function (event) {
-            console.log('open');
-        };
-        dataChannel.onstatechange
+    function setTime() {
+        ++totalSeconds;
+        secondsLabel.innerHTML = pad(totalSeconds % 60);
+        minutesLabel.innerHTML = pad(parseInt(totalSeconds / 60));
+        hoursLabel.innerHTML = pad(parseInt(totalSeconds / 60) / 60);
     }
 
-    function send() {
-        console.log('send');
-        dataChannel.send('hi');
+    function pad(val) {
+        var valString = val + "";
+        if (valString.length < 2) {
+            return "0" + valString;
+        } else {
+            return valString;
+        }
+    }
+
+    function muteBtn() {
+
+    }
+
+    function endBtn() {
+        clearInterval(timer);
+        console.log('end');
+        peerConnection.close();
+        document.querySelector('#idel2').className = 'nav-item active';
+        document.querySelector('#idel').className = 'nav-item active';
+        document.querySelector('#established2').className = 'nav-item';
+        document.querySelector('#established').className = 'nav-item';
+        document.querySelector('#closed2').className = 'nav-item';
+        document.querySelector('#closed').className = 'nav-item';
+        document.querySelector('#joinStatus').hidden = true;
+        document.querySelector('#createStatus').hidden = true;
+        document.querySelector('#createBtn').disabled = false;
+        document.querySelector('#joinBtn').disabled = false;
+        document.querySelector('#muteBtn').disabled = true;
+        document.querySelector('#endBtn').disabled = true;
     }
 
     var peerConnection = new RTCPeerConnection();
-    console.log('currebt state ' + peerConnection.iceGatheringState);
     var stream;
     var remote_video = document.querySelector('#remote_video');
     var sseConnection;
     var room_name;
-    var dataChannel;
-
-    {#$('#joinModal').on('hidden.bs.modal', function () {#}
-    {#    close();#}
-    {# });#}
-    {##}
-    {#$('#createModal').on('hidden.bs.modal', function () {#}
-    {#    close();#}
-    {# });#}
+    var minutesLabel = document.getElementById("minutes");
+    var secondsLabel = document.getElementById("seconds");
+    var hoursLabel = document.getElementById("hours");
+    var totalSeconds = 0;
+    var timer;
 
     navigator.getUserMedia({video: true, audio: true}, function (navStream) {
         console.log('nav');
@@ -307,18 +434,8 @@
         alert(err);
     });
 
-    console.log('register');
-
-    peerConnection.oniceconnectionstatechange = function (event) {
-        console.log('change connection state ' + event.target.iceConnectionState);
-    };
-
     peerConnection.onicecandidate = function (event) {
-        console.log('state' + event.target.iceGatheringState);
-        console.log(peerConnection.iceGatheringState);
         if (event.candidate) {
-            console.log('ice 2');
-            console.log(event.candidate);
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '{{ url_for('send_room_signal') }}');
             xhr.onload = function () {
@@ -331,28 +448,23 @@
     };
 
     peerConnection.onaddstream = function (event) {
-        console.log('onaddstream');
         remote_video.srcObject = event.stream;
     };
 
-    peerConnection.onicecandidateerror = function (event) {
-        console.log('onicecandidateerror');
-        console.log(event);
-    };
-    peerConnection.onerror = function (event) {
-        console.log('onerror');
-        console.log(event);
+    peerConnection.onclose = function (event) {
+        clearInterval(timer);
+        alert('peer ended the call');
+        peerConnection.close();
+
     };
 
-    peerConnection.ontrack = function (event) {
-        console.log('on DDD ontrack');
-        remote_video.srcObject = event.stream[0];
-    };
-
-    peerConnection.iceConnectionState = function (event) {
-        console.log('sdf');
-        console.log(peerConnection.state());
+    peerConnection.oniceconnectionstatechange = function () {
+        if (peerConnection.iceConnectionState === 'disconnected') {
+            endBtn();
+            alert('the peer ended the call');
+        }
     }
+
 </script>
 
 </body>

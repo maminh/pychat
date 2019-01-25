@@ -104,6 +104,5 @@ def create_room():
 @login_required
 def send_room_signal():
     data = loads(request.data)
-    print(data.get('type'), current_user.username)
     sse.publish({'data': data.get('data')}, type=data.get('type'), channel=data.get('room'))
     return Response('ok', status=200)
