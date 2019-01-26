@@ -6,12 +6,13 @@ from flask import request, jsonify, render_template, send_file, Response
 from flask_login import current_user, login_required
 from flask_socketio import emit, join_room
 
-from app import socket_io, App, ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+from app import socket_io, App, ALLOWED_VIDEOS, UPLOAD_FOLDER, csrf, ALLOWED_AUDIO
 from app.forms import StreamForm
 from app.models import Message, User, ChatVideos, StreamModel
 from app.utils import random_name
 from utils.room import generate_room_name, serialize_msg
-from app.celery_tasks import merge_streams
+from app.celery_tasks import merge_streams, merge_audio_streams
+
 
 @socket_io.on('event', namespace='/chat')
 def test_msg(message):
@@ -56,16 +57,21 @@ def get_msgs():
     return jsonify(list(msgs_list))
 
 
-def allowed_file(filename):
+def allowed_video(filename):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEOS
+
+def allowd_audio(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_AUDIO
 
 def connection_exists():
     return True
 
-@App.route('/record', methods=['GET', 'POST'])
+
+@App.route('/record/video', methods=['GET', 'POST'])
 @login_required
-def upload():
+def upload_video():
 
     form = StreamForm()
     if request.method == 'GET':
@@ -74,13 +80,17 @@ def upload():
     elif request.method == 'POST':
         if form.validate_on_submit():
             file = request.files['file']
-            if allowed_file(file.filename):
+            print(file.filename)
+            if allowed_video(file.filename):
                 print('allowd file name')
                 name = random_name()+'.mp4'
                 file.save(os.path.join(UPLOAD_FOLDER + '/streams' , name))
+                print(form.chatID.data)
+                peer = User.get(User.username==form.chatID.data)
+                print(peer)
                 streamModel = StreamModel()
                 streamModel.peer1ID = current_user.id
-                streamModel.peer2ID =form.chatID.data
+                streamModel.peer2ID =peer.id
                 streamModel.streamID = form.streamID.data
                 streamModel.streamName = name
                 if form.fin.data:
@@ -100,6 +110,43 @@ def upload():
                 return Response('ok',status=200)
         print(form.errors)
         return Response('Bad request',400)
+
+@App.route('/record/audio',methods=['GET','POST'])
+@login_required
+def upload_audio():
+    form = StreamForm()
+    if request.method == 'GET':
+        videos = ChatVideos.select().where((ChatVideos.peer1 == current_user.id) | (ChatVideos.peer2 == current_user.id))
+        return  render_template('recorded_chats.html', videos= videos)
+    elif request.method== 'POST':
+        if form.validate_on_submit():
+            file = request.files['file']
+            if allowd_audio(file.filename):
+                name = random_name() + '.mp3'
+                file.save(os.path.join(UPLOAD_FOLDER + '/streams' , name))
+                print(form.chatID.data)
+                peer = User.get(User.username==form.chatID.data)
+                print(peer)
+                streamModel = StreamModel()
+                streamModel.peer1ID = current_user.id
+                streamModel.peer2ID =peer.id
+                streamModel.streamID = form.streamID.data
+                streamModel.streamName = name
+                if form.fin.data:
+                    streamModel.fin = True
+                try :
+                    streamModel.save()
+                    print('stream model saved')
+                except Exception as e:
+                    print(e)
+                    print('stream model could not be saved')
+                    return Response('Stream not saved',400)
+                print(form.fin.data)
+                if  form.fin.data:
+                    print('merging streams')
+                    if StreamModel.get_or_none(peer2ID = form.streamID.data, streamID = current_user.id, fin = True):
+                        merge_audio_streams.delay(peer1ID= current_user.id, peer2ID=form.chatID.data)
+                return Response('ok',status=200)
 
 @App.route('/download/<filename>')
 @login_required
