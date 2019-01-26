@@ -5,6 +5,7 @@ from json import loads, dumps
 from flask import request, jsonify, render_template, send_file, Response
 from flask_login import current_user, login_required
 from flask_socketio import emit, join_room
+from peewee import DoesNotExist
 
 from app import socket_io, App, ALLOWED_VIDEOS, UPLOAD_FOLDER, ALLOWED_AUDIO
 from app.celery_tasks import merge_streams, merge_audio_streams
@@ -88,7 +89,10 @@ def upload_video():
                 name = random_name() + '.mp4'
                 file.save(os.path.join(UPLOAD_FOLDER + '/streams', name))
                 print(form.chatID.data)
-                peer = User.get(User.username == form.chatID.data)
+                try:
+                    peer = User.get(User.id == current_user.id)
+                except DoesNotExist:
+                    return Response('Bad request', 404)
                 print(peer)
                 streamModel = StreamModel()
                 streamModel.peer1ID = current_user.id

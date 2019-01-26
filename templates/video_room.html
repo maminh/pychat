@@ -253,8 +253,6 @@
         xhr.onload = function () {
             if (this.status === 409) {
                 notif("create", 'room already exists. try another one!', "alert");
-            } else if (this.status === 400) {
-                notif("create", 'room name cannot started with _user!', "alert");
             } else {
                 notif("create", 'room created waiting for another people!', "alert");
                 document.querySelector('#createBtn').disabled = true;
@@ -326,6 +324,8 @@
         var xhr = new XMLHttpRequest();
         xhr.open('POST', "{{ url_for('join_room') }}");
         xhr.onload = function () {
+            console.log('join');
+            console.log(this.status);
             if (this.status === 200) {
                 json = JSON.parse(this.responseText);
                 json.members.forEach(function (entry) {
@@ -337,8 +337,11 @@
                 document.querySelector('#joinBtn').disabled = true;
             } else if (this.status === 404)
                 notif("join", 'room not found', "alert");
-            else
+            else {
+
                 notif("join", 'error happened try again', "alert");
+                console.log(this.responseText);
+            }
         };
         xhr.send(JSON.stringify({username: "{{ user.username }}", room: room_name}));
     }
@@ -351,6 +354,8 @@
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '{{ url_for('send_room_signal') }}');
             xhr.onload = function () {
+                console.log('status');
+                console.log(this.status);
                 if (!this.status === 200) {
                     alert('failed to send offer');
                 } else {
@@ -475,6 +480,7 @@
         clearInterval(timer);
         alert('peer ended the call');
         peerConnection.close();
+        formData.append('fin', true);
 
     };
 
@@ -545,8 +551,9 @@
         formData.append('chatID', 'mohammad');
         formData.append('file', blob, 'a.webm');
         formData.append('csrf_token', '{{csrf_token()}}');
+        formData.append('fin', false);
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '{{url_for('upload')}}');
+        xhr.open('POST', '{{url_for('upload_video')}}');
         console.log(formData);
         xhr.send(formData);
         console.log('send stream');

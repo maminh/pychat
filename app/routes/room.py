@@ -85,12 +85,14 @@ def join_room():
 @App.route('/room/create_room', methods=['POST'])
 @login_required
 def create_room():
+    print('heeeeeeeey')
     data = loads(request.data)
     room = mem_cache.get(data.get('room'))
-    if data.get('room')[0:5] == "user_":
-        return Response('room name cannot started with _user!', status=400)
+    # if data.get('room')[0:5] == "user_":
+    #     return Response('room name cannot started with _user!', status=400)
     if room:
         return Response('already exists', status=409)
+    print('heeeeeeeeeeeeeey')
     room_data = {
         'creator': data.get('username'),
         'members': []
