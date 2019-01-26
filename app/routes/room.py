@@ -4,7 +4,7 @@ from flask import request, Response, render_template
 from flask_login import login_required, current_user
 from flask_sse import sse
 
-from app import App, mem_cache
+from app import App, mem_cache, csrf
 from utils.room import serialize_cache
 
 
@@ -71,6 +71,7 @@ def send_candidate():
 
 @App.route('/room/join_room', methods=['POST'])
 @login_required
+@csrf.exempt
 def join_room():
     data = loads(request.data)
     room = serialize_cache(data.get('room'))

@@ -12,7 +12,7 @@ from app.celery_tasks import merge_streams, merge_audio_streams
 from app.forms import StreamForm
 from app.models import Message, User, ChatVideos, StreamModel
 from app.utils import random_name
-from utils.room import generate_room_name, serialize_msg
+from utils.room import generate_room_name, serialize_msg, serialize_cache
 
 
 @socket_io.on('event', namespace='/chat')
@@ -93,12 +93,23 @@ def upload_video():
                     peer = User.get(User.id == current_user.id)
                 except DoesNotExist:
                     return Response('Bad request', 404)
+                print('priting peer user')
                 print(peer)
                 streamModel = StreamModel()
                 streamModel.peer1ID = current_user.id
-                streamModel.peer2ID = peer.id
+                room = serialize_cache(form.chatID.data)
+                print('room', room)
+                if room.get('creator') == current_user.username:
+                    peer2 = User.get(User.username == room.get('members')[0])
+                    print('I\'m host', str(peer2))
+                    streamModel.peer2ID = peer2.id
+                elif room.get('members') and room.get('members')[0] == current_user.username:
+                    peer2 = User.get(User.username == room.get('creator'))
+                    print('I\'m guest', str(peer2))
+                    streamModel.peer2ID = peer2.id
                 streamModel.streamID = form.streamID.data
                 streamModel.streamName = name
+                print(streamModel)
                 if form.fin.data:
                     streamModel.fin = True
                 try:

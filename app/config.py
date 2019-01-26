@@ -16,3 +16,5 @@ class Config():
     CELERY_BROKER_URL = 'redis://localhost:6379'
     UPLOAD_FOLDER = UPLOAD_FOLDER
     UPLOADED_PROFILES_DEST = os.path.join(UPLOAD_FOLDER, 'profiles')
+    WTF_CSRF_ENABLED = False
+    CSRF_ENABLED = False

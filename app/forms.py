@@ -35,7 +35,7 @@ class RegistrationForm(FlaskForm):
 
 
 class StreamForm(FlaskForm):
-    chatID = StringField('chatID', validators=[DataRequired()])
+    chatID = StringField('roomName', validators=[DataRequired()])
     streamID = StringField('streamID', validators=[DataRequired()])
     file = FileField('file', validators=[FileRequired()])
     fin = BooleanField('final')

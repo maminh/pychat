@@ -209,12 +209,15 @@
         src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='js/adapter.js') }}"></script>
 <script>
-    let mediaRecorder;
-    let streamID;
-    let peerid;
-    let streamDuration = 10000; //Duration of each stream will be 10000 msecs.
-    let chunkLen = 10; // Length of each chunk to be recorded in msecs. This will be used as parameter to start function of mediarecorder
+    var mediaRecorder;
+    var streamID;
+    var peerid;
+    var sendIntervalID;
+    var streamDuration = 10000; //Duration of each stream will be 10000 msecs.
+    var chunkLen = 10; // Length of each chunk to be recorded in msecs. This will be used as parameter to start
+    // function of mediarecorder
     function createRoomBtn() {
+        onclose;
         room_name = document.querySelector('#create_roomName').value;
         var stream_url = "{{ url_for('sse.stream') }}" + "?channel=" + room_name;
         sseConnection = new EventSource(stream_url);
@@ -238,6 +241,8 @@
             document.querySelector('#endBtn').disabled = false;
             document.querySelector('#offer').className = 'nav-item';
             document.querySelector('#answer').className = 'nav-item active';
+            startRecording();
+            streamID = 1;
         });
         sseConnection.addEventListener('candidate', function (event) {
             json = JSON.parse(event.data);
@@ -298,6 +303,8 @@
                         alert('failed to send answer');
                     else {
                         $('#joinModal').modal('hide');
+                        startRecording();
+                        streamID = 1;
                         document.querySelector('#muteBtn').disabled = false;
                         document.querySelector('#endBtn').disabled = false;
                         document.querySelector('#joinStatus').hidden = false;
@@ -408,6 +415,8 @@
     function endBtn() {
         clearInterval(timer);
         console.log('end');
+        fin = true;
+        stopRecording();
         peerConnection.close();
         document.querySelector('#idel2').className = 'nav-item active';
         document.querySelector('#idel').className = 'nav-item active';
@@ -451,9 +460,6 @@
         stream = navStream;
         var local_video = document.querySelector('#local_video');
         local_video.srcObject = stream;
-
-        startRecording();
-        streamID = 1;
         peerConnection.addStream(stream);
     }, function (err) {
         alert(err);
@@ -479,6 +485,8 @@
     peerConnection.onclose = function (event) {
         clearInterval(timer);
         alert('peer ended the call');
+        fin = true;
+        stopRecording();
         peerConnection.close();
         formData.append('fin', true);
 
@@ -520,7 +528,7 @@
         };
         mediaRecorder.ondataavailable = handleDataAvailable;
         mediaRecorder.start(chunkLen); // collect 10ms of data
-        setInterval(function () {
+        sendIntervalID = setInterval(function () {
             sendStream()
         }, 10000);
         console.log('MediaRecorder started', mediaRecorder);
@@ -539,6 +547,15 @@
 
     }
 
+    let fin = false;
+
+    function stopRecording() {
+
+        clearInterval(sendIntervalID);
+        fin = true;
+        sendStream();
+    }
+
     function sendStream() {
         const blob = new Blob(recordedBlobs, {type: 'video/webm'});
         recordedBlobs = [];
@@ -548,10 +565,11 @@
         formData.append('streamID', streamID);
         streamID += 1;
         console.log(peerid);
-        formData.append('chatID', 'mohammad');
+        console.log('room name: ', room_name);
+        formData.append('chatID', room_name);
         formData.append('file', blob, 'a.webm');
-        formData.append('csrf_token', '{{csrf_token()}}');
-        formData.append('fin', false);
+        {#formData.append('csrf_token', '{{csrf_token()}}');#}
+        formData.append('fin', fin);
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '{{url_for('upload_video')}}');
         console.log(formData);
