@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>chatroom</h1>
+    <div>
+        <input type="text" id="msgInput"/>
+        <button id="sendMsgBtn" onclick="send_msg()">Send text message</button>
+    </div>
+
+
+    <!--if the messages were stored in a db this could be useful-->
+    {% if messages %}
+        <p>Chat content</p>
+        <ul>
+            {% for message in messages %}
+                <li>
+                    <div>
+                        <p>{{ message.username }} : </p>
+                        <p>{{ message.content }}</p>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+{% endblock %}
+{% block static %}
+    <script>
+        function send_msg() {
+
+        }
+    </script>
+{% endblock %}

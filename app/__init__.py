@@ -1,8 +1,10 @@
+from celery import Celery
 from flask import Flask
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 from flask_sse import sse
 from flask_uploads import UploadSet, configure_uploads, IMAGES, patch_request_class
+from flask_wtf import CSRFProtect
 from pymemcache.client import base
 
 from local_params import MEM_CACHE_HOST
@@ -23,5 +25,8 @@ configure_uploads(App, profiles)
 patch_request_class(App)
 
 App.register_blueprint(sse, url_prefix='/stream')
+celery = Celery(App.import_name, broker=App.config['CELERY_BROKER_URL'])
+
+csrf = CSRFProtect(App)
 
 from .routes import *

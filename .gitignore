@@ -233,3 +233,4 @@ dmypy.json
 local_params.py
 
 uploads/*
+uploads

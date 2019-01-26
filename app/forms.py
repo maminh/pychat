@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from flask_wtf.file import FileAllowed
+from flask_wtf.file import FileRequired
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, FileField
 from wtforms.validators import DataRequired, EqualTo, ValidationError
 
 from app import profiles
@@ -26,3 +27,15 @@ class RegistrationForm(FlaskForm):
         user = User.select().where(User.username == username.data).first()
         if user is not None:
             raise ValidationError('Please use a different username.')
+    #
+    # def validate_email(self, email):
+    #     user = User.query.filter_by(email=email.data).first()
+    #     if user is not None:
+    #         raise ValidationError('Please use a different email address.')
+
+
+class StreamForm(FlaskForm):
+    chatID = StringField('chatID', validators=[DataRequired()])
+    streamID = StringField('streamID', validators=[DataRequired()])
+    file = FileField('file', validators=[FileRequired()])
+    fin = BooleanField('final')

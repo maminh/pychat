@@ -43,3 +43,26 @@ class Message(Model):
     receiver = db.ForeignKeyField(User)
     msg = db.CharField(max_length=512)
     datetime = db.DateTimeField()
+
+
+class StreamModel(Model):
+    """
+    To keep track of running video chats.
+    This class is used in recording and merging of chat videos.
+    """
+    peer1ID = db.ForeignKeyField(model=User)
+    peer2ID = db.ForeignKeyField(model=User)
+    streamName = db.CharField(unique=True)
+    # last stream id which peer 1 has sent
+    streamID = db.IntegerField()
+    fin = db.BooleanField(default=False)
+
+
+class ChatVideos(Model):
+    """
+    Recorded chat videos.
+    """
+    peer1 = db.ForeignKeyField(model=User)
+    peer2 = db.ForeignKeyField(model=User)
+    fileAddress = db.CharField()
+    chatDate = db.DateTimeField()
